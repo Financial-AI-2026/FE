@@ -2,8 +2,12 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import ProductCard from '../components/ProductCard.vue'
 import BaseBadge from '../components/base/BaseBadge.vue'
+import ChatWidget from '../components/ChatWidget.vue'
 
-const emit = defineEmits(['back', 'retry', 'open'])
+const emit = defineEmits(['back', 'retry', 'open', 'browse'])
+
+// S6(진단 결과) 공통 추천 칩 — 종목/조건과 무관하게 동일하게 노출.
+const chatSuggestions = ['이 상품, 제 조건에 맞나요?', '왜 이런 결과가 나왔나요?', '매수 전에 뭘 더 확인해야 하나요?']
 
 const productName = 'TIGER 미국S&P500레버리지(합성 H)'
 
@@ -140,6 +144,13 @@ onUnmounted(() => {
         </button>
       </div>
     </section>
+
+    <ChatWidget
+      stage="s6"
+      :suggestions="chatSuggestions"
+      @retry="emit('retry')"
+      @view-products="emit('browse')"
+    />
   </div>
 </template>
 
