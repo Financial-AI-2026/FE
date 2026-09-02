@@ -1,0 +1,66 @@
+/*
+ * 디자인 토큰 (:root)
+ * - 값은 지금 앱 전체에서 실제로 쓰이고 있던 다크 테마 색상을 그대로 옮긴 것.
+ * - 상품 배너 그라디언트(kodex/globalx)처럼 특정 브랜드 로고 색상은 여기 넣지 않는다.
+ *   그건 앱의 디자인 시스템이 아니라 각 브랜드 고유 색상이라 컴포넌트 scoped style에 남긴다.
+ */
+
+:root {
+  /* Color - surface */
+  --color-bg-page: #05070d;
+  --color-bg-page-mid: #070c16;
+  --color-bg-page-deep: #0b1220;
+  --color-bg-card: #101c33;
+
+  /* Color - text */
+  --color-fg: #ffffff;
+  --color-fg-soft: #e8ecf5;
+  --color-fg-muted: #6b7690;
+  --color-icon-muted: #cfd8ea;
+
+  /* Color - border */
+  --color-border-default: rgba(255, 255, 255, 0.06);
+  --color-border-subtle-strong: rgba(255, 255, 255, 0.08);
+  --color-border-hover: rgba(150, 180, 230, 0.2);
+
+  /* Color - surface (interactive) */
+  --color-surface-subtle: rgba(255, 255, 255, 0.06);
+  --color-surface-hover: rgba(255, 255, 255, 0.08);
+  --color-surface-hover-strong: rgba(255, 255, 255, 0.16);
+
+  /* Color - accent */
+  --color-accent-blue: #2563eb;
+  --color-accent-blue-strong: #1d4ed8;
+  --color-accent-orange: #ea580c;
+  --color-accent-purple: #c9a8ff;
+  --color-badge-purple-bg: rgba(168, 116, 255, 0.14);
+  --color-badge-purple-border: rgba(168, 116, 255, 0.35);
+
+  /* Spacing */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+
+  /* Radius */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 14px;
+  --radius-pill: 999px;
+
+  /* Typography */
+  --font-family-base: 'Pretendard', system-ui, 'Segoe UI', Roboto, sans-serif;
+  --font-size-sm: 12px;
+  --font-size-md: 14px;
+  --font-size-lg: 16px;
+
+  /* Z-index */
+  --z-base: 0;
+  --z-dropdown: 10;
+  --z-sticky: 20;
+  --z-overlay: 30;
+  --z-modal: 40;
+  --z-toast: 50;
+}
