@@ -1,6 +1,7 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
 import ProductCard from '../components/ProductCard.vue'
+import BaseBadge from '../components/base/BaseBadge.vue'
 
 const emit = defineEmits(['back', 'retry', 'open'])
 
@@ -67,8 +68,8 @@ onUnmounted(() => {
       <div class="avatar" />
 
       <div class="badges">
-        <span class="badge">로그인 필요해요</span>
-        <span class="badge">개인정보 미수집</span>
+        <BaseBadge tone="purple">로그인 필요해요</BaseBadge>
+        <BaseBadge tone="purple">개인정보 미수집</BaseBadge>
       </div>
     </header>
 
@@ -92,7 +93,7 @@ onUnmounted(() => {
     <section class="sim-section">
       <h2 class="reveal">이 상품에 100만원을 넣었다면 어떻게 됐을까요?</h2>
 
-      <div class="sim-box reveal" />
+      <div class="sim-box reveal">차트 영역 (디자인 예정)</div>
 
       <p class="sim-desc reveal">
         따라가는 지수는 제자리인데, 이 상품은 18만원이 사라졌습니다.<br />
@@ -147,7 +148,7 @@ onUnmounted(() => {
   min-height: 100svh;
   box-sizing: border-box;
   padding: clamp(24px, 2.4vw, 40px) clamp(28px, 5vw, 80px) 60px;
-  background: linear-gradient(180deg, #0b1220 0%, #070c16 30%, #05070d 100%);
+  background: linear-gradient(180deg, var(--color-bg-page-deep) 0%, var(--color-bg-page-mid) 30%, var(--color-bg-page) 100%);
 }
 
 .top-bar {
@@ -169,24 +170,13 @@ onUnmounted(() => {
   gap: 10px;
 }
 
-.badge {
-  font-size: 12px;
-  font-weight: 500;
-  padding: 6px 12px;
-  border-radius: 999px;
-  color: #c9a8ff;
-  background: rgba(168, 116, 255, 0.14);
-  border: 1px solid rgba(168, 116, 255, 0.35);
-  white-space: nowrap;
-}
-
 .back-btn {
   margin-top: 18px;
   width: 32px;
   height: 32px;
   border-radius: 50%;
   border: none;
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--color-surface-subtle);
   color: #cfd8ea;
   display: flex;
   align-items: center;
@@ -281,6 +271,11 @@ section {
   height: clamp(180px, 22vw, 260px);
   border-radius: 18px;
   background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #9098ab;
+  font-size: clamp(12px, 0.95vw, 14px);
 }
 
 .sim-desc {
@@ -345,7 +340,7 @@ section {
 
 .also-desc {
   margin: 12px 0 0;
-  color: #6b7690;
+  color: var(--color-fg-muted);
   font-size: clamp(12px, 0.95vw, 14px);
   line-height: 1.6;
 }
@@ -355,7 +350,7 @@ section {
   padding: clamp(18px, 1.8vw, 26px);
   border-radius: 14px;
   background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--color-border-default);
   text-align: left;
 }
 

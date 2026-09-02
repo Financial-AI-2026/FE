@@ -1,5 +1,7 @@
 <script setup>
 import { onMounted } from 'vue'
+import BaseBadge from '../components/base/BaseBadge.vue'
+import docSearchIcon from '../assets/icons/loading-doc-search.png'
 
 const emit = defineEmits(['done'])
 
@@ -15,8 +17,8 @@ onMounted(() => {
     <header class="top-bar">
       <div class="avatar" />
       <div class="badges">
-        <span class="badge">로그인 필요해요</span>
-        <span class="badge">개인정보 미수집</span>
+        <BaseBadge tone="purple">로그인 필요해요</BaseBadge>
+        <BaseBadge tone="purple">개인정보 미수집</BaseBadge>
       </div>
     </header>
 
@@ -24,10 +26,7 @@ onMounted(() => {
       <h1>TIGER 미국S&amp;P500레버리지(합성 H)</h1>
       <p class="issuer">미래에셋자산운용</p>
 
-      <div class="spinner-stage">
-        <div class="spinner-ring" />
-        <div class="spinner-core" />
-      </div>
+      <img :src="docSearchIcon" class="loading-icon" alt="" />
 
       <p class="msg">투자 설명서를 확인하고 있어요! 잠시만 기다려주세요</p>
       <p class="submsg">투자설명서를 불러오고 있습니다</p>
@@ -42,7 +41,7 @@ onMounted(() => {
   padding: clamp(24px, 2.4vw, 40px) clamp(28px, 5vw, 80px) 60px;
   display: flex;
   flex-direction: column;
-  background: linear-gradient(180deg, #0b1220 0%, #070c16 45%, #05070d 100%);
+  background: linear-gradient(180deg, var(--color-bg-page-deep) 0%, var(--color-bg-page-mid) 45%, var(--color-bg-page) 100%);
 }
 
 .top-bar {
@@ -62,17 +61,6 @@ onMounted(() => {
 .badges {
   display: flex;
   gap: 10px;
-}
-
-.badge {
-  font-size: 12px;
-  font-weight: 500;
-  padding: 6px 12px;
-  border-radius: 999px;
-  color: #c9a8ff;
-  background: rgba(168, 116, 255, 0.14);
-  border: 1px solid rgba(168, 116, 255, 0.35);
-  white-space: nowrap;
 }
 
 .content {
@@ -98,35 +86,22 @@ onMounted(() => {
   font-size: clamp(13px, 1vw, 16px);
 }
 
-.spinner-stage {
-  position: relative;
+.loading-icon {
   width: clamp(96px, 9vw, 140px);
-  height: clamp(96px, 9vw, 140px);
+  height: auto;
   margin: 20px 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  animation: loading-pulse 1.8s ease-in-out infinite;
 }
 
-.spinner-core {
-  width: 100%;
-  height: 100%;
-  border-radius: 50%;
-  background: radial-gradient(circle at 35% 30%, #e4ecfb, #b7c6e6);
-}
-
-.spinner-ring {
-  position: absolute;
-  inset: -8px;
-  border-radius: 50%;
-  border: 3px solid rgba(77, 163, 255, 0.15);
-  border-top-color: #4da3ff;
-  animation: spin 1.1s linear infinite;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
+@keyframes loading-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 0.85;
   }
 }
 

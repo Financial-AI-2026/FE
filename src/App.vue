@@ -1,20 +1,17 @@
 <script setup>
-import { ref } from 'vue'
-import LandingPage from './pages/LandingPage.vue'
-import QuestionIntroPage from './pages/QuestionIntroPage.vue'
-import SearchPage from './pages/SearchPage.vue'
-import DetailLoadingPage from './pages/DetailLoadingPage.vue'
-import DetailPage from './pages/DetailPage.vue'
-import ResultPage from './pages/ResultPage.vue'
+import { ref } from "vue";
+import LandingPage from "./pages/LandingPage.vue";
+import QuestionIntroPage from "./pages/QuestionIntroPage.vue";
+import SearchPage from "./pages/SearchPage.vue";
+import DetailLoadingPage from "./pages/DetailLoadingPage.vue";
+import DetailPage from "./pages/DetailPage.vue";
+import ResultPage from "./pages/ResultPage.vue";
 
-const page = ref('landing')
+const page = ref("landing");
 </script>
 
 <template>
-  <LandingPage
-    v-if="page === 'landing'"
-    @start="page = 'question'"
-  />
+  <LandingPage v-if="page === 'landing'" @start="page = 'question'" />
   <QuestionIntroPage
     v-else-if="page === 'question'"
     @finish="page = 'search'"

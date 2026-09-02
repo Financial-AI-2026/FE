@@ -1,6 +1,7 @@
 <script setup>
 import { ref, reactive, onMounted, onUnmounted } from 'vue'
 import ProductCard from '../components/ProductCard.vue'
+import BaseBadge from '../components/base/BaseBadge.vue'
 
 const emit = defineEmits(['back', 'diagnose'])
 
@@ -142,8 +143,8 @@ function scrollRecoNext() {
       <div class="avatar" />
 
       <div class="badges">
-        <span class="badge">로그인 필요해요</span>
-        <span class="badge">개인정보 미수집</span>
+        <BaseBadge tone="purple">로그인 필요해요</BaseBadge>
+        <BaseBadge tone="purple">개인정보 미수집</BaseBadge>
       </div>
     </header>
 
@@ -167,7 +168,10 @@ function scrollRecoNext() {
       <h2>이름에 대해서 먼저 알려드릴게요!</h2>
 
       <div class="name-breakdown">
-        <span class="name-icon-bg" aria-hidden="true">🔍</span>
+        <svg class="name-icon-bg" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round">
+          <circle cx="11" cy="11" r="7" />
+          <line x1="21" y1="21" x2="16.65" y2="16.65" />
+        </svg>
 
         <div class="term-col">
           <div
@@ -301,7 +305,7 @@ function scrollRecoNext() {
   min-height: 100svh;
   box-sizing: border-box;
   padding: clamp(24px, 2.4vw, 40px) clamp(28px, 5vw, 80px) 60px;
-  background: linear-gradient(180deg, #0b1220 0%, #070c16 30%, #05070d 100%);
+  background: linear-gradient(180deg, var(--color-bg-page-deep) 0%, var(--color-bg-page-mid) 30%, var(--color-bg-page) 100%);
 }
 
 .top-bar {
@@ -323,24 +327,13 @@ function scrollRecoNext() {
   gap: 10px;
 }
 
-.badge {
-  font-size: 12px;
-  font-weight: 500;
-  padding: 6px 12px;
-  border-radius: 999px;
-  color: #c9a8ff;
-  background: rgba(168, 116, 255, 0.14);
-  border: 1px solid rgba(168, 116, 255, 0.35);
-  white-space: nowrap;
-}
-
 .back-btn {
   margin-top: 18px;
   width: 32px;
   height: 32px;
   border-radius: 50%;
   border: none;
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--color-surface-subtle);
   color: #cfd8ea;
   display: flex;
   align-items: center;
@@ -436,8 +429,9 @@ section {
   right: 6%;
   transform: translateY(-50%);
   z-index: 0;
-  line-height: 1;
-  font-size: clamp(160px, 16vw, 260px);
+  width: clamp(160px, 16vw, 260px);
+  height: clamp(160px, 16vw, 260px);
+  color: var(--color-fg-soft);
   opacity: 0.16;
   filter: blur(0.5px);
   pointer-events: none;
@@ -654,7 +648,7 @@ section {
 
 .warn-desc {
   margin: 6px 0 0;
-  color: #6b7690;
+  color: var(--color-fg-muted);
   font-size: clamp(12px, 0.95vw, 15px);
 }
 
@@ -686,7 +680,7 @@ section {
   padding: clamp(18px, 1.8vw, 26px);
   border-radius: 14px;
   background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--color-border-default);
   text-align: left;
 }
 

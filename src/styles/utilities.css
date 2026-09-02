@@ -1,0 +1,30 @@
+/*
+ * 여러 컴포넌트에서 반복되는 공용 유틸리티.
+ * 새 유틸을 추가하는 기준: "이미 3곳 이상에서 똑같은 선언이 반복되고 있는가?"
+ * - flex-center: 페이지마다 justify-content: center 조합이 수십 번 반복되고 있어서 추가.
+ * 애매하면 컴포넌트 scoped style에 두고, 정말 반복될 때만 여기로 승격한다.
+ */
+
+.u-flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.u-truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.u-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

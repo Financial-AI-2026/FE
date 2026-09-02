@@ -1,8 +1,23 @@
 <script setup>
-defineProps({
+import { computed } from 'vue'
+import BaseButton from './base/BaseButton.vue'
+import BaseBadge from './base/BaseBadge.vue'
+import kodexLogo from '../assets/icons/kodex.png'
+import tigerLogo from '../assets/icons/tiger.png'
+import prosharesLogo from '../assets/icons/proshares.png'
+import globalxLogo from '../assets/icons/globalx.png'
+
+const logos = {
+  kodex: kodexLogo,
+  tiger: tigerLogo,
+  proshares: prosharesLogo,
+  globalx: globalxLogo,
+}
+
+const props = defineProps({
   brand: {
     type: String,
-    default: 'kodex', // 'kodex' | 'globalx'
+    default: 'kodex', // 'kodex' | 'tiger' | 'proshares' | 'globalx'
   },
   disabled: {
     type: Boolean,
@@ -10,23 +25,17 @@ defineProps({
   },
 })
 
+const logoSrc = computed(() => logos[props.brand] ?? logos.kodex)
+
 defineEmits(['open'])
 </script>
 
 <template>
   <article class="product-card" :class="{ disabled }">
-    <span v-if="disabled" class="analyzing-badge">분석 중</span>
+    <BaseBadge v-if="disabled" class="analyzing-badge">분석 중</BaseBadge>
 
     <div class="banner" :class="brand">
-      <div v-if="brand === 'kodex'" class="logo logo-kodex">
-        <svg viewBox="0 0 24 24" fill="currentColor" class="pin">
-          <path
-            d="M12 2C7.6 2 4 5.6 4 10c0 6 8 12 8 12s8-6 8-12c0-4.4-3.6-8-8-8Zm0 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6Z"
-          />
-        </svg>
-        <span>Kodex</span>
-      </div>
-      <div v-else class="logo logo-globalx">GLOBAL X</div>
+      <img :src="logoSrc" :alt="brand" class="brand-logo" />
     </div>
 
     <div class="body">
@@ -35,52 +44,56 @@ defineEmits(['open'])
       <p class="line sub">회사 이름</p>
     </div>
 
-    <button
-      type="button"
+    <BaseButton
       class="go-btn"
       :disabled="disabled"
+      aria-label="상세 보기"
       @click="$emit('open')"
     >
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M7 17 17 7" />
         <path d="M9 7h8v8" />
       </svg>
-    </button>
+    </BaseButton>
   </article>
 </template>
 
 <style scoped>
 .product-card {
   position: relative;
-  border-radius: 14px;
+  border-radius: var(--radius-lg);
   overflow: hidden;
-  background: #101c33;
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border-default);
   transition: transform 0.2s ease, border-color 0.2s ease;
 }
 
 .product-card:not(.disabled):hover {
   transform: translateY(-2px);
-  border-color: rgba(150, 180, 230, 0.2);
+  border-color: var(--color-border-hover);
 }
 
 .product-card.disabled {
   opacity: 0.55;
 }
 
+/* BaseBadge/BaseButton은 자기 자신의 생김새만 책임진다.
+   카드 안에서 어디에 놓일지(위치)는 이 카드의 레이아웃 관심사라 여기서 지정한다. */
 .analyzing-badge {
   position: absolute;
   top: 10px;
   left: 10px;
   z-index: 2;
-  padding: 3px 10px;
-  border-radius: 999px;
-  background: #2563eb;
-  color: #fff;
-  font-size: 10px;
-  font-weight: 600;
 }
 
+.go-btn {
+  position: absolute;
+  right: clamp(10px, 1vw, 16px);
+  bottom: clamp(10px, 1vw, 16px);
+}
+
+/* 배너 그라디언트/로고 색상은 kodex·globalx 브랜드 고유 색이라
+   앱 디자인 토큰이 아닌 이 컴포넌트의 상수로 둔다. */
 .banner {
   height: clamp(96px, 9vw, 140px);
   display: flex;
@@ -96,27 +109,20 @@ defineEmits(['open'])
   background: linear-gradient(135deg, #eafbe9 0%, #bdeec6 100%);
 }
 
-.logo {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: clamp(20px, 1.8vw, 28px);
-  font-weight: 700;
+.banner.tiger {
+  /* DetailPage.vue의 TIGER ETF 배너와 같은 톤으로 맞춤 */
+  background: linear-gradient(135deg, #fff8f2 0%, #ffb37a 100%);
 }
 
-.logo-kodex {
-  color: #1d4ed8;
+.banner.proshares {
+  background: linear-gradient(135deg, #f6fff1 0%, #c2ff9f 100%);
 }
 
-.logo-kodex .pin {
-  width: 1em;
-  height: 1em;
-}
-
-.logo-globalx {
-  color: #ea580c;
-  font-style: italic;
-  letter-spacing: -0.5px;
+.brand-logo {
+  height: clamp(20px, 1.8vw, 28px);
+  width: auto;
+  max-width: 78%;
+  object-fit: contain;
 }
 
 .body {
@@ -129,43 +135,13 @@ defineEmits(['open'])
 }
 
 .line.title {
-  color: #e8ecf5;
+  color: var(--color-fg-soft);
   font-size: clamp(13px, 1.05vw, 16px);
   font-weight: 600;
 }
 
 .line.sub {
-  color: #6b7690;
+  color: var(--color-fg-muted);
   font-size: clamp(11px, 0.85vw, 13px);
-}
-
-.go-btn {
-  position: absolute;
-  right: clamp(10px, 1vw, 16px);
-  bottom: clamp(10px, 1vw, 16px);
-  width: clamp(26px, 2.2vw, 34px);
-  height: clamp(26px, 2.2vw, 34px);
-  border-radius: 50%;
-  border: none;
-  background: rgba(255, 255, 255, 0.08);
-  color: #cfd8ea;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: background 0.2s ease;
-}
-
-.go-btn svg {
-  width: 48%;
-  height: 48%;
-}
-
-.go-btn:not(:disabled):hover {
-  background: rgba(255, 255, 255, 0.16);
-}
-
-.go-btn:disabled {
-  cursor: not-allowed;
 }
 </style>

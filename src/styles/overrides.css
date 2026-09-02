@@ -1,0 +1,15 @@
+/*
+ * 특정 페이지 하나를 위한 동작이지만, body를 직접 건드려야 해서 scoped로 못 넣는 예외들.
+ * reset(브라우저 기본값 정리)도 아니고 utilities(여러 컴포넌트 공용)도 아니라서 별도 파일로 분리.
+ * 새 항목을 추가하기 전에, 정말 scoped style로 해결이 안 되는지부터 확인할 것.
+ */
+
+/* DetailPage.vue가 마운트된 동안 네이티브 스크롤바를 숨기고,
+   그 페이지가 직접 그리는 좌측 커스텀 스크롤바로 대체한다. */
+body.hide-native-scrollbar {
+  scrollbar-width: none;
+}
+
+body.hide-native-scrollbar::-webkit-scrollbar {
+  display: none;
+}

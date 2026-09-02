@@ -1,37 +1,8 @@
-* {
-  box-sizing: border-box;
-}
-
-html,
-body {
-  margin: 0;
-  padding: 0;
-  min-height: 100%;
-}
-
-/* 상세(ETF) 페이지에서만 네이티브 스크롤바를 숨기고, 그 페이지가 직접 그리는
-   좌측 커스텀 바로 대체한다. 이 클래스는 DetailPage.vue가 마운트될 때만 body에 붙는다. */
-body.hide-native-scrollbar {
-  scrollbar-width: none;
-}
-
-body.hide-native-scrollbar::-webkit-scrollbar {
-  display: none;
-}
-
-body {
-  font-family: 'Pretendard', system-ui, 'Segoe UI', Roboto, sans-serif;
-  background: #05070d;
-  color: #fff;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
+@import './styles/variables.css';
+@import './styles/reset.css';
+@import './styles/utilities.css';
+@import './styles/overrides.css';
 
 #app {
   min-height: 100svh;
-}
-
-button {
-  font-family: inherit;
-  cursor: pointer;
 }
