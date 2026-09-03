@@ -1,5 +1,6 @@
 <script setup>
 import { ref, onMounted, onUnmounted, nextTick } from 'vue'
+import chatbotLogo from '../assets/images/Logo.png'
 
 const props = defineProps({
   // 화면(S4/S6)마다 다른 추천 질문 칩 — 클릭해도 전송되지 않는 예시 텍스트일 뿐이다.
@@ -247,7 +248,7 @@ function runAction(action) {
       aria-label="챗봇 열기"
       @click="toggle"
     >
-      C
+      <img :src="chatbotLogo" class="chat-fab-logo" alt="" />
     </button>
   </div>
 
@@ -347,36 +348,29 @@ function runAction(action) {
 }
 
 .chat-fab {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
+  width: 46px;
+  height: 46px;
+  border-radius: 30%;
   border: none;
-  background: #22c55e;
-  color: #fff;
-  font-weight: 700;
-  font-size: 15px;
-  box-shadow: 0 6px 18px rgba(34, 197, 94, 0.4);
+  background: linear-gradient(135deg, #2d3c60 0%, #0a0d16 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
   flex-shrink: 0;
-  animation: fab-pulse 2.4s ease-in-out infinite;
+  box-shadow: 0 6px 18px rgba(10, 14, 25, 0.5);
+}
+
+.chat-fab-logo {
+  width: 60%;
+  height: auto;
 }
 
 .chat-fab.disabled {
-  background: #4b5563;
+  filter: grayscale(1);
+  opacity: 0.5;
   box-shadow: none;
   cursor: not-allowed;
-  animation: none;
-  opacity: 0.5;
-}
-
-@keyframes fab-pulse {
-  0%,
-  100% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.08);
-  }
 }
 
 .chat-overlay {
