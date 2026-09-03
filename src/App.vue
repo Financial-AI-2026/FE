@@ -25,6 +25,7 @@ const page = ref("landing");
     v-else-if="page === 'detail'"
     @back="page = 'search'"
     @diagnose="page = 'diagnosing'"
+    @retry="page = 'question'"
   />
   <DetailLoadingPage
     v-else-if="page === 'diagnosing'"
@@ -35,5 +36,6 @@ const page = ref("landing");
     @back="page = 'detail'"
     @retry="page = 'question'"
     @open="page = 'detail'"
+    @browse="page = 'search'"
   />
 </template>

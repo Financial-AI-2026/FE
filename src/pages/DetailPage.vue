@@ -2,12 +2,17 @@
 import { ref, reactive, onMounted, onUnmounted } from 'vue'
 import ProductCard from '../components/ProductCard.vue'
 import BaseBadge from '../components/base/BaseBadge.vue'
+import ChatWidget from '../components/ChatWidget.vue'
 
-const emit = defineEmits(['back', 'diagnose'])
+const emit = defineEmits(['back', 'diagnose', 'retry'])
 
 const productName = 'TIGER 미국S&P500레버리지(합성 H)'
 
 const showUnderstandModal = ref(false)
+const chatWidgetRef = ref(null)
+
+// S4(이름 해독) 단계 추천 칩 — 이 상품 이름 토큰(레버리지/합성/H) 기준.
+const chatSuggestions = ['레버리지가 뭐예요?', '합성은 무슨 뜻이에요?', '환헤지가 뭔가요?']
 
 const scrollbar = reactive({ heightPct: 100, topPct: 0 })
 
@@ -30,6 +35,8 @@ function openUnderstandModal() {
 function rereadFromTop() {
   showUnderstandModal.value = false
   window.scrollTo({ top: 0, behavior: 'smooth' })
+  // 이해 확인에서 되돌아온 경우, 질문 경로를 다시 안내한다.
+  chatWidgetRef.value?.pingHint()
 }
 
 function confirmUnderstood() {
@@ -281,7 +288,14 @@ function scrollRecoNext() {
       </div>
     </section>
 
-    <button type="button" class="chat-fab" aria-label="도움말">C</button>
+    <ChatWidget
+      ref="chatWidgetRef"
+      stage="s4"
+      :suggestions="chatSuggestions"
+      :disabled="showUnderstandModal"
+      @retry="emit('retry')"
+      @view-products="emit('back')"
+    />
 
     <Transition name="modal-fade">
       <div v-if="showUnderstandModal" class="modal-backdrop">
@@ -767,33 +781,6 @@ section {
   border-color: rgba(77, 163, 255, 0.4);
   color: #4da3ff;
   transform: translateY(-50%) scale(1.06);
-}
-
-.chat-fab {
-  position: fixed;
-  right: 28px;
-  bottom: 28px;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  border: none;
-  background: #22c55e;
-  color: #fff;
-  font-weight: 700;
-  font-size: 15px;
-  box-shadow: 0 6px 18px rgba(34, 197, 94, 0.4);
-  cursor: pointer;
-  animation: fab-pulse 2.4s ease-in-out infinite;
-}
-
-@keyframes fab-pulse {
-  0%,
-  100% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.08);
-  }
 }
 
 @media (max-width: 700px) {

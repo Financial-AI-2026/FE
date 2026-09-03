@@ -1,6 +1,7 @@
 <script setup>
 import { onMounted } from 'vue'
 import BaseBadge from '../components/base/BaseBadge.vue'
+import ChatWidget from '../components/ChatWidget.vue'
 import docSearchIcon from '../assets/icons/loading-doc-search.png'
 
 const emit = defineEmits(['done'])
@@ -31,6 +32,8 @@ onMounted(() => {
       <p class="msg">투자 설명서를 확인하고 있어요! 잠시만 기다려주세요</p>
       <p class="submsg">투자설명서를 불러오고 있습니다</p>
     </div>
+
+    <ChatWidget disabled :auto-hint="false" />
   </div>
 </template>
 

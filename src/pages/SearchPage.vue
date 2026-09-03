@@ -66,8 +66,6 @@ const analyzedOnly = ref(false)
         @open="emit('open')"
       />
     </div>
-
-    <button type="button" class="chat-fab" aria-label="도움말">C</button>
   </div>
 </template>
 
@@ -213,33 +211,6 @@ h1 {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: clamp(16px, 1.6vw, 28px);
-}
-
-.chat-fab {
-  position: fixed;
-  right: 28px;
-  bottom: 28px;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  border: none;
-  background: #22c55e;
-  color: #fff;
-  font-weight: 700;
-  font-size: 15px;
-  box-shadow: 0 6px 18px rgba(34, 197, 94, 0.4);
-  cursor: pointer;
-  animation: fab-pulse 2.4s ease-in-out infinite;
-}
-
-@keyframes fab-pulse {
-  0%,
-  100% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.08);
-  }
 }
 
 @media (max-width: 700px) {
