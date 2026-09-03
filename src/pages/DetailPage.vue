@@ -1,136 +1,163 @@
 <script setup>
-import { ref, reactive, onMounted, onUnmounted } from 'vue'
-import ProductCard from '../components/ProductCard.vue'
-import BaseBadge from '../components/base/BaseBadge.vue'
-import ChatWidget from '../components/ChatWidget.vue'
+import { ref, reactive, onMounted, onUnmounted } from "vue";
+import ProductCard from "../components/ProductCard.vue";
+import BaseBadge from "../components/base/BaseBadge.vue";
+import BrandLogo from "../components/base/BrandLogo.vue";
+import ChatWidget from "../components/ChatWidget.vue";
+import magnifierIcon from "../assets/icons/icon-search.png";
+import warningIcon from "../assets/icons/warning-triangle.svg";
+import tigerLogo from "../assets/icons/tiger.png";
 
-const emit = defineEmits(['back', 'diagnose', 'retry'])
+const emit = defineEmits(["back", "diagnose", "retry"]);
 
-const productName = 'TIGER 미국S&P500레버리지(합성 H)'
+const productName = "TIGER 미국S&P500레버리지(합성 H)";
 
-const showUnderstandModal = ref(false)
-const chatWidgetRef = ref(null)
+const showUnderstandModal = ref(false);
+const chatWidgetRef = ref(null);
 
 // S4(이름 해독) 단계 추천 칩 — 이 상품 이름 토큰(레버리지/합성/H) 기준.
-const chatSuggestions = ['레버리지가 뭐예요?', '합성은 무슨 뜻이에요?', '환헤지가 뭔가요?']
+const chatSuggestions = [
+  "레버리지가 뭐예요?",
+  "합성은 무슨 뜻이에요?",
+  "환헤지가 뭔가요?",
+];
 
-const scrollbar = reactive({ heightPct: 100, topPct: 0 })
+const scrollbar = reactive({ heightPct: 100, topPct: 0 });
 
 function updateScrollbar() {
-  const doc = document.documentElement
-  const viewportH = window.innerHeight
-  const fullH = doc.scrollHeight
-  const heightPct = Math.min(100, (viewportH / fullH) * 100)
-  const maxScroll = fullH - viewportH
-  const scrollPct = maxScroll > 0 ? window.scrollY / maxScroll : 0
+  const doc = document.documentElement;
+  const viewportH = window.innerHeight;
+  const fullH = doc.scrollHeight;
+  const heightPct = Math.min(100, (viewportH / fullH) * 100);
+  const maxScroll = fullH - viewportH;
+  const scrollPct = maxScroll > 0 ? window.scrollY / maxScroll : 0;
 
-  scrollbar.heightPct = heightPct
-  scrollbar.topPct = (100 - heightPct) * scrollPct
+  scrollbar.heightPct = heightPct;
+  scrollbar.topPct = (100 - heightPct) * scrollPct;
 }
 
 function openUnderstandModal() {
-  showUnderstandModal.value = true
+  showUnderstandModal.value = true;
 }
 
 function rereadFromTop() {
-  showUnderstandModal.value = false
-  window.scrollTo({ top: 0, behavior: 'smooth' })
+  showUnderstandModal.value = false;
+  window.scrollTo({ top: 0, behavior: "smooth" });
   // 이해 확인에서 되돌아온 경우, 질문 경로를 다시 안내한다.
-  chatWidgetRef.value?.pingHint()
+  chatWidgetRef.value?.pingHint();
 }
 
 function confirmUnderstood() {
-  showUnderstandModal.value = false
-  emit('diagnose')
+  showUnderstandModal.value = false;
+  emit("diagnose");
 }
 
 onMounted(() => {
-  document.body.classList.add('hide-native-scrollbar')
-  updateScrollbar()
-  window.addEventListener('scroll', updateScrollbar, { passive: true })
-  window.addEventListener('resize', updateScrollbar)
-})
+  document.body.classList.add("hide-native-scrollbar");
+  updateScrollbar();
+  window.addEventListener("scroll", updateScrollbar, { passive: true });
+  window.addEventListener("resize", updateScrollbar);
+});
 
 onUnmounted(() => {
-  document.body.classList.remove('hide-native-scrollbar')
-  window.removeEventListener('scroll', updateScrollbar)
-  window.removeEventListener('resize', updateScrollbar)
-})
+  document.body.classList.remove("hide-native-scrollbar");
+  window.removeEventListener("scroll", updateScrollbar);
+  window.removeEventListener("resize", updateScrollbar);
+});
 
 const terms = [
   {
-    label: 'TIGER',
-    phrase: '미래에셋이 만든',
+    label: "TIGER",
+    phrase: "미래에셋이 만든",
     detail:
-      'TIGER는 미래에셋자산운용의 ETF 브랜드예요. 어떤 회사가 이 상품을 만들고 운용하는지 알려주는 부분이에요.',
+      "TIGER는 미래에셋자산운용의 ETF 브랜드예요. 어떤 회사가 이 상품을 만들고 운용하는지 알려주는 부분이에요.",
   },
   {
-    label: '미국S&P500',
-    phrase: '미국 큰 회사 500개를',
-    detail: '미국을 대표하는 500개 대기업의 주가로 만든 지수예요. 이 지수를 그대로 따라가도록 설계됐어요.',
+    label: "미국S&P500",
+    phrase: "미국 큰 회사 500개를",
+    detail:
+      "미국을 대표하는 500개 대기업의 주가로 만든 지수예요. 이 지수를 그대로 따라가도록 설계됐어요.",
   },
   {
-    label: '레버리지',
-    phrase: '2배로 따라가는데',
-    detail: '기초지수가 하루 동안 오르내리는 만큼의 2배로 움직이도록 설계된 상품이에요.',
+    label: "레버리지",
+    phrase: "2배로 따라가는데",
+    detail:
+      "기초지수가 하루 동안 오르내리는 만큼의 2배로 움직이도록 설계된 상품이에요.",
   },
   {
-    label: '합성',
-    phrase: '실제 주식은 사지 않고',
-    detail: '실제 주식을 직접 사는 대신, 증권사와 계약(스왑)을 맺어 수익률만 그대로 받아오는 방식이에요.',
+    label: "합성",
+    phrase: "실제 주식은 사지 않고",
+    detail:
+      "실제 주식을 직접 사는 대신, 증권사와 계약(스왑)을 맺어 수익률만 그대로 받아오는 방식이에요.",
   },
   {
-    label: 'H',
-    phrase: '환율 걱정은 없는 상품',
-    detail: '환헤지(Hedge)가 적용돼 있어서, 환율이 오르내려도 수익률에 영향을 주지 않아요.',
+    label: "H",
+    phrase: "환율 걱정은 없는 상품",
+    detail:
+      "환헤지(Hedge)가 적용돼 있어서, 환율이 오르내려도 수익률에 영향을 주지 않아요.",
   },
-]
+];
 
-const activeTerm = ref(0)
+const activeTerm = ref(0);
 
 const qa = [
-  { q: '어떤 지수를 따라가나요?', a: 'S&P500 따라가요', tag: '기초지수', sub: 'S&P500은 미국의 500개 회사를 말해요' },
-  { q: '몇 배로 움직이나요?', a: '2배로 움직여요', tag: '레버리지 배율', sub: '단, 하루 단위로 2배를 계산해요.' },
   {
-    q: '주식을 직접 사는건가요?',
-    a: '아니요! 증권사와 계약만 맺어요',
-    tag: '복제방식',
-    sub: 'S&P500은 미국의 500개 회사를 말해요',
+    q: "어떤 지수를 따라가나요?",
+    a: "S&P500 따라가요",
+    tag: "기초지수",
+    sub: "S&P500은 미국의 500개 회사를 말해요",
   },
   {
-    q: '돈을 나눠주나요?',
-    a: '아니요 다시 굴려요',
-    tag: '분배 정책',
-    sub: 'S&P500은 미국의 500개 회사를 말해요',
+    q: "몇 배로 움직이나요?",
+    a: "2배로 움직여요",
+    tag: "레버리지 배율",
+    sub: "단, 하루 단위로 2배를 계산해요.",
   },
   {
-    q: '환율에 영향은 받나요?',
-    a: '없어요. 막아두는 장치가 있어요',
-    tag: '환헤지 여부',
-    sub: 'S&P500은 미국의 500개 회사를 말해요',
+    q: "주식을 직접 사는건가요?",
+    a: "아니요! 증권사와 계약만 맺어요",
+    tag: "복제방식",
+    sub: "S&P500은 미국의 500개 회사를 말해요",
   },
-  { q: '수수료는 얼마 인가요?', a: '1년에 0.25%예요', tag: '총보수', sub: '100만원당 2,500원이에요' },
-]
+  {
+    q: "돈을 나눠주나요?",
+    a: "아니요 다시 굴려요",
+    tag: "분배 정책",
+    sub: "S&P500은 미국의 500개 회사를 말해요",
+  },
+  {
+    q: "환율에 영향은 받나요?",
+    a: "없어요. 막아두는 장치가 있어요",
+    tag: "환헤지 여부",
+    sub: "S&P500은 미국의 500개 회사를 말해요",
+  },
+  {
+    q: "수수료는 얼마 인가요?",
+    a: "1년에 0.25%예요",
+    tag: "총보수",
+    sub: "100만원당 2,500원이에요",
+  },
+];
 
 const recommended = [
-  { brand: 'kodex' },
-  { brand: 'kodex' },
-  { brand: 'kodex' },
-  { brand: 'globalx' },
-  { brand: 'kodex' },
-  { brand: 'kodex' },
-  { brand: 'globalx' },
-  { brand: 'kodex' },
-]
+  { brand: "kodex" },
+  { brand: "kodex" },
+  { brand: "kodex" },
+  { brand: "globalx" },
+  { brand: "kodex" },
+  { brand: "kodex" },
+  { brand: "globalx" },
+  { brand: "kodex" },
+];
 
-const recoTrack = ref(null)
+const recoTrack = ref(null);
 
 function scrollRecoNext() {
-  const el = recoTrack.value
-  if (!el) return
-  const amount = el.clientWidth * 0.8
-  const atEnd = el.scrollLeft + el.clientWidth >= el.scrollWidth - 4
-  el.scrollTo({ left: atEnd ? 0 : el.scrollLeft + amount, behavior: 'smooth' })
+  const el = recoTrack.value;
+  if (!el) return;
+  const amount = el.clientWidth * 0.8;
+  const atEnd = el.scrollLeft + el.clientWidth >= el.scrollWidth - 4;
+  el.scrollTo({ left: atEnd ? 0 : el.scrollLeft + amount, behavior: "smooth" });
 }
 </script>
 
@@ -142,21 +169,31 @@ function scrollRecoNext() {
     >
       <div
         class="left-scrollbar-thumb"
-        :style="{ height: scrollbar.heightPct + '%', top: scrollbar.topPct + '%' }"
+        :style="{
+          height: scrollbar.heightPct + '%',
+          top: scrollbar.topPct + '%',
+        }"
       />
     </div>
 
     <header class="top-bar">
-      <div class="avatar" />
+      <BrandLogo />
 
-      <div class="badges">
-        <BaseBadge tone="purple">로그인 필요해요</BaseBadge>
+      <!-- <div class="badges">
+        <BaseBadge tone="purple">로그인 불필요</BaseBadge>
         <BaseBadge tone="purple">개인정보 미수집</BaseBadge>
-      </div>
+      </div> -->
     </header>
 
     <button type="button" class="back-btn" @click="emit('back')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2.2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
         <path d="M15 18 9 12l6-6" />
       </svg>
     </button>
@@ -166,8 +203,7 @@ function scrollRecoNext() {
       <p class="issuer">미래에셋자산운용</p>
 
       <div class="promo-banner">
-        <span class="promo-tiger">TIGER</span>
-        <span class="promo-etf">ETF</span>
+        <img :src="tigerLogo" class="promo-logo" alt="TIGER ETF" />
       </div>
     </section>
 
@@ -175,10 +211,12 @@ function scrollRecoNext() {
       <h2>이름에 대해서 먼저 알려드릴게요!</h2>
 
       <div class="name-breakdown">
-        <svg class="name-icon-bg" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round">
-          <circle cx="11" cy="11" r="7" />
-          <line x1="21" y1="21" x2="16.65" y2="16.65" />
-        </svg>
+        <img
+          :src="magnifierIcon"
+          class="name-icon-bg"
+          aria-hidden="true"
+          alt=""
+        />
 
         <div class="term-col">
           <div
@@ -221,51 +259,48 @@ function scrollRecoNext() {
             <span class="qa-badge">A</span>
           </div>
 
-          <h3>{{ item.q }}</h3>
-          <p class="qa-answer">{{ item.a }}</p>
-          <p class="qa-tag">{{ item.tag }}</p>
-          <p class="qa-sub">{{ item.sub }}</p>
+          <div class="qa-row">
+            <h3>{{ item.q }}</h3>
+            <p class="qa-answer">{{ item.a }}</p>
+          </div>
+
+          <div class="qa-row qa-row-sub">
+            <p class="qa-tag">{{ item.tag }}</p>
+            <p class="qa-sub">{{ item.sub }}</p>
+          </div>
         </div>
       </div>
     </section>
 
     <section class="warn-section">
-      <svg class="warn-icon" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z" />
-        <line x1="12" y1="9" x2="12" y2="13" />
-        <line x1="12" y1="17" x2="12.01" y2="17" />
-      </svg>
+      <img :src="warningIcon" class="warn-icon" alt="" />
 
       <h2>이건 꼭 알고 투자해야해요!</h2>
 
       <div class="warn-card">
         <span class="warn-tag">레버리지 ETF, 항상 2배일까요?</span>
 
-        <div class="warn-icon-doc">
-          <svg viewBox="0 0 24 24" fill="none" stroke="#3b5ba0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-            <polyline points="14 2 14 8 20 8" />
-            <line x1="8" y1="13" x2="16" y2="13" />
-            <line x1="8" y1="17" x2="13" y2="17" />
-          </svg>
-        </div>
-
         <p class="warn-title">레버리지, 항상 2배는 아니에요</p>
         <p class="warn-desc">하루 수익률 기준으로만 2배를 따라가요.</p>
       </div>
 
-      <button type="button" class="warn-cta" @click="openUnderstandModal">{{ productName }} 진단하러 가기</button>
+      <button type="button" class="warn-cta" @click="openUnderstandModal">
+        {{ productName }} 진단하러 가기
+      </button>
 
       <p class="warn-disclaimer">
-        이 정보는 특정 매수 권유가 아니며, 누구나 동일하게 조회하는 사전 이해 목적의 구조 분석 결과입니다.
+        이 정보는 특정 매수 권유가 아니며, 누구나 동일하게 조회하는 사전 이해
+        목적의 구조 분석 결과입니다.
       </p>
 
       <div class="source-box">
         <p class="source-label">*상품설명서(투자설명서) 근거 원문</p>
         <p class="source-text">
-          "본 투자신탁은 기초지수의 일별수익률의 2배수의 수익률을 추적하는 것을 기본 투자목적으로 하고 있습니다.
-          이때 하루가 아닌 2영업일 이상의 투자기간에 걸쳐 실현되는 실제 누적수익률은 동 기간 내 기초지수의
-          누적수익률의 정확히 2배 수익률과 크게 괴리되거나 반대 방향을 나타낼 수 있습니다."
+          "본 투자신탁은 기초지수의 일별수익률의 2배수의 수익률을 추적하는 것을
+          기본 투자목적으로 하고 있습니다. 이때 하루가 아닌 2영업일 이상의
+          투자기간에 걸쳐 실현되는 실제 누적수익률은 동 기간 내 기초지수의
+          누적수익률의 정확히 2배 수익률과 크게 괴리되거나 반대 방향을 나타낼 수
+          있습니다."
         </p>
       </div>
     </section>
@@ -280,8 +315,20 @@ function scrollRecoNext() {
           </div>
         </div>
 
-        <button type="button" class="reco-next" aria-label="다음 상품 보기" @click="scrollRecoNext">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+        <button
+          type="button"
+          class="reco-next"
+          aria-label="다음 상품 보기"
+          @click="scrollRecoNext"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.4"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
             <path d="m9 6 6 6-6 6" />
           </svg>
         </button>
@@ -301,11 +348,25 @@ function scrollRecoNext() {
       <div v-if="showUnderstandModal" class="modal-backdrop">
         <div class="modal-card">
           <h3>{{ productName }}에 대해서 이해하셨나요?</h3>
-          <p>이해하신 후 진단하면 나에게 필요한지 더 정확하게 판단할 수 있어요!</p>
+          <p>
+            이해하신 후 진단하면 나에게 필요한지 더 정확하게 판단할 수 있어요!
+          </p>
 
           <div class="modal-actions">
-            <button type="button" class="modal-btn ghost" @click="rereadFromTop">다시 읽어볼게요</button>
-            <button type="button" class="modal-btn primary" @click="confirmUnderstood">네, 이해했어요</button>
+            <button
+              type="button"
+              class="modal-btn ghost"
+              @click="rereadFromTop"
+            >
+              다시 읽어볼게요
+            </button>
+            <button
+              type="button"
+              class="modal-btn primary"
+              @click="confirmUnderstood"
+            >
+              네, 이해했어요
+            </button>
           </div>
         </div>
       </div>
@@ -319,20 +380,17 @@ function scrollRecoNext() {
   min-height: 100svh;
   box-sizing: border-box;
   padding: clamp(24px, 2.4vw, 40px) clamp(28px, 5vw, 80px) 60px;
-  background: linear-gradient(180deg, var(--color-bg-page-deep) 0%, var(--color-bg-page-mid) 30%, var(--color-bg-page) 100%);
+  background: linear-gradient(
+    180deg,
+    var(--color-bg-page-deep) 0%,
+    var(--color-bg-page-mid) 30%,
+    var(--color-bg-page) 100%
+  );
 }
 
 .top-bar {
   display: flex;
   align-items: center;
-}
-
-.avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: #d9d9d9;
-  flex-shrink: 0;
 }
 
 .badges {
@@ -392,24 +450,15 @@ section {
   margin-top: clamp(20px, 2vw, 32px);
   padding: clamp(28px, 3vw, 48px);
   border-radius: 20px;
-  background: linear-gradient(120deg, #fff8f2 0%, #ffb37a 60%, #ff8a3d 100%);
+  background: linear-gradient(180deg, #fff8f2 0%, #ffb37a 60%, #ff8a3d 100%);
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: center;
-  gap: 10px;
 }
 
-.promo-tiger {
-  color: #ff5f2e;
-  font-size: clamp(26px, 2.8vw, 40px);
-  font-weight: 800;
-  letter-spacing: -0.5px;
-}
-
-.promo-etf {
-  color: #1d2c48;
-  font-size: clamp(26px, 2.8vw, 40px);
-  font-weight: 800;
+.promo-logo {
+  width: clamp(180px, 18vw, 280px);
+  height: auto;
 }
 
 /* ==================================================
@@ -417,7 +466,7 @@ section {
 ================================================== */
 
 .name-section {
-  margin-top: clamp(48px, 4.5vw, 72px);
+  margin-top: clamp(120px, 11vw, 170px);
 }
 
 .name-section h2 {
@@ -434,19 +483,18 @@ section {
   grid-template-columns: 1fr 1fr;
   gap: clamp(20px, 3vw, 48px);
   padding: clamp(28px, 3vw, 48px) 0;
-  overflow: hidden;
 }
 
 .name-icon-bg {
   position: absolute;
   top: 50%;
-  right: 6%;
-  transform: translateY(-50%);
+  right: -20%;
+  transform: translateY(-50%) rotate(-5deg);
   z-index: 0;
-  width: clamp(160px, 16vw, 260px);
-  height: clamp(160px, 16vw, 260px);
-  color: var(--color-fg-soft);
-  opacity: 0.16;
+  width: clamp(420px, 33vw, 520px);
+  height: auto;
+  opacity: 0.14;
+  /* filter: grayscale(1) blur(0.5px); */
   filter: blur(0.5px);
   pointer-events: none;
   user-select: none;
@@ -457,7 +505,7 @@ section {
   z-index: 1;
   display: flex;
   flex-direction: column;
-  gap: clamp(10px, 1.2vw, 18px);
+  gap: clamp(14px, 1.5vw, 22px);
 }
 
 .term-item {
@@ -468,7 +516,7 @@ section {
 .term-label {
   display: block;
   color: #5b667e;
-  font-size: clamp(15px, 1.3vw, 19px);
+  font-size: clamp(16px, 1.5vw, 21px);
   font-weight: 600;
   transition: color 0.2s ease;
 }
@@ -500,17 +548,21 @@ section {
   z-index: 1;
   display: flex;
   flex-direction: column;
+  align-items: center;
   justify-content: center;
-  gap: clamp(10px, 1vw, 16px);
+  gap: clamp(14px, 1.6vw, 24px);
 }
 
 .phrase {
   margin: 0;
   cursor: pointer;
   color: #4a5468;
-  font-size: clamp(14px, 1.2vw, 19px);
+  font-size: clamp(15px, 1.5vw, 22px);
   font-weight: 500;
-  transition: color 0.2s ease, font-weight 0.2s ease;
+  text-align: center;
+  transition:
+    color 0.2s ease,
+    font-weight 0.2s ease;
 }
 
 .phrase.active {
@@ -523,7 +575,7 @@ section {
 ================================================== */
 
 .qa-section {
-  margin-top: clamp(48px, 4.5vw, 72px);
+  margin-top: clamp(120px, 11vw, 170px);
 }
 
 .qa-section h2 {
@@ -560,30 +612,36 @@ section {
 }
 
 .qa-badge {
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: #3b82f6;
-  color: #fff;
-  font-size: 11px;
+  color: #0099ff;
+  font-size: 13px;
   font-weight: 700;
+}
+
+.qa-row {
   display: flex;
-  align-items: center;
-  justify-content: center;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.qa-row-sub {
+  margin-top: 2px;
 }
 
 .qa-card h3 {
-  margin: 0 0 8px;
+  margin: 0;
   color: #1a2233;
   font-size: clamp(14px, 1.15vw, 18px);
   font-weight: 700;
 }
 
 .qa-answer {
-  margin: 0 0 10px;
+  margin: 0;
   color: #2f6fe0;
   font-size: clamp(14px, 1.1vw, 17px);
   font-weight: 700;
+  text-align: right;
+  white-space: nowrap;
 }
 
 .qa-tag {
@@ -593,9 +651,10 @@ section {
 }
 
 .qa-sub {
-  margin: 2px 0 0;
+  margin: 0;
   color: #9098ab;
   font-size: clamp(11px, 0.85vw, 13px);
+  text-align: right;
 }
 
 /* ==================================================
@@ -603,13 +662,15 @@ section {
 ================================================== */
 
 .warn-section {
-  margin-top: clamp(48px, 4.5vw, 72px);
+  margin-top: clamp(120px, 11vw, 170px);
   text-align: center;
 }
 
 .warn-icon {
-  width: 30px;
-  height: 30px;
+  width: 34px;
+  height: auto;
+  margin: 0 auto;
+  margin-bottom: clamp(12px, 1.2vw, 18px);
 }
 
 .warn-section h2 {
@@ -620,6 +681,9 @@ section {
 }
 
 .warn-card {
+  width: fit-content;
+  max-width: 100%;
+  margin: 0 auto;
   padding: clamp(24px, 2.4vw, 36px);
   border-radius: 18px;
   background: #fff;
@@ -629,32 +693,17 @@ section {
 }
 
 .warn-tag {
-  padding: 5px 12px;
-  border-radius: 999px;
-  background: #3b82f6;
+  padding: 1px 5px;
+  /* border-radius: 2px; */
+  background: #0099ff;
   color: #fff;
-  font-size: clamp(11px, 0.9vw, 14px);
-  font-weight: 600;
-}
-
-.warn-icon-doc {
-  width: clamp(56px, 5vw, 76px);
-  height: clamp(56px, 5vw, 76px);
-  margin: 18px 0 14px;
-  border-radius: 14px;
-  background: #eef4ff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.warn-icon-doc svg {
-  width: 50%;
-  height: 50%;
+  font-size: clamp(17px, 1.3vw, 20px);
+  font-weight: 700;
+  white-space: nowrap;
 }
 
 .warn-title {
-  margin: 0;
+  margin: 18px 0 0;
   color: #1d2c48;
   font-size: clamp(15px, 1.25vw, 19px);
   font-weight: 700;
@@ -691,10 +740,6 @@ section {
 
 .source-box {
   margin-top: clamp(24px, 2.4vw, 36px);
-  padding: clamp(18px, 1.8vw, 26px);
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid var(--color-border-default);
   text-align: left;
 }
 
@@ -717,7 +762,7 @@ section {
 ================================================== */
 
 .reco-section {
-  margin-top: clamp(48px, 4.5vw, 72px);
+  margin-top: clamp(120px, 11vw, 170px);
 }
 
 .reco-section h2 {
@@ -768,7 +813,11 @@ section {
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: background 0.2s ease, border-color 0.2s ease, transform 0.15s ease, color 0.2s ease;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.15s ease,
+    color 0.2s ease;
 }
 
 .reco-next svg {
@@ -858,7 +907,9 @@ section {
   font-size: clamp(13px, 1vw, 15px);
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s ease, opacity 0.2s ease;
+  transition:
+    background 0.2s ease,
+    opacity 0.2s ease;
 }
 
 .modal-btn.ghost {

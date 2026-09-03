@@ -5,6 +5,7 @@ import iconDocument from "../assets/icons/icon-document.png";
 import iconTarget from "../assets/icons/target.png";
 import earthImg from "../assets/images/earth.png";
 import BaseBadge from "../components/base/BaseBadge.vue";
+import BrandLogo from "../components/base/BrandLogo.vue";
 
 const emit = defineEmits(["start"]);
 
@@ -86,12 +87,11 @@ const stars = Array.from({ length: 34 }, () => ({
 
       <!-- 상단 -->
       <header class="top-bar">
-        <div class="avatar" />
+        <BrandLogo />
 
         <div class="badges">
-          <BaseBadge tone="purple">로그인 필요해요</BaseBadge>
-
-          <BaseBadge tone="purple">개인정보 미수집</BaseBadge>
+          <!-- <BaseBadge tone="purple">로그인 불필요</BaseBadge>
+          <BaseBadge tone="purple">개인정보 미수집</BaseBadge> -->
         </div>
       </header>
 
@@ -324,17 +324,6 @@ const stars = Array.from({ length: 34 }, () => ({
 
   align-items: center;
   justify-content: space-between;
-}
-
-.avatar {
-  width: 40px;
-  height: 40px;
-
-  flex-shrink: 0;
-
-  border-radius: 50%;
-
-  background: #d9d9d9;
 }
 
 .badges {
@@ -680,11 +669,6 @@ const stars = Array.from({ length: 34 }, () => ({
 
   .globe-wrap {
     width: 520px;
-  }
-
-  .avatar {
-    width: 32px;
-    height: 32px;
   }
 
   .badges {

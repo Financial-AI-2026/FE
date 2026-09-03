@@ -1,109 +1,100 @@
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue'
-import searchDocumentIcon from '../assets/icons/icon-search-document.png'
+import { ref, reactive, computed, onMounted } from "vue";
+import searchDocumentIcon from "../assets/icons/icon-search-document.png";
+import BrandLogo from "../components/base/BrandLogo.vue";
 
-const emit = defineEmits(['finish'])
+const emit = defineEmits(["finish"]);
 
 const questions = [
   {
-    title: 'ETF를 얼마나 오래 가지고 계실 계획이신가요?',
-    subtitle: '어떤 상품은 오래 들고 있을수록 유리할 수 있어요',
+    title: "ETF를 얼마나 오래 가지고 계실 계획이신가요?",
+    subtitle: "어떤 상품은 오래 들고 있을수록 유리할 수 있어요",
     options: [
-      '잘 모르겠어요',
-      '1년 안에 팔 것 같아요',
-      '1~5년 정도 가지고 있을 거예요.',
-      '5년 이상 길게 생각 중이에요.',
+      "잘 모르겠어요",
+      "1년 안에 팔 것 같아요",
+      "1~5년 정도\n가지고 있을 거예요.",
+      "5년 이상 길게 생각 중이에요.",
     ],
   },
   {
-    title: '투자한 돈으로 무엇을 하고 싶으세요?',
-    subtitle: '같은 상품도 무엇을 원하는지에 따라 알맞고 안 맞고가 갈려요',
+    title: "투자한 돈으로 무엇을 하고 싶으세요?",
+    subtitle: "같은 상품도 무엇을 원하는지에 따라 알맞고 안 맞고가 갈려요",
     options: [
-      '가격이 올랐을 때 팔아서 차익을 얻고 싶어요',
-      '매달·정기적으로 현금을 받고 싶어요',
-      '오래 묻어두고 자산을 불리고 싶어요',
+      "가격이 올랐을 때 팔아서 차익을 얻고 싶어요",
+      "매달·정기적으로 현금을 받고 싶어요",
+      "오래 묻어두고 자산을 불리고 싶어요",
     ],
   },
   {
-    title: '투자한 돈은 어떤 성격의 돈인가요?',
-    subtitle: '꼭 필요한 돈이라면 더 조심해서 알려드릴게요',
+    title: "투자한 돈은 어떤 성격의 돈인가요?",
+    subtitle: "꼭 필요한 돈이라면 더 조심해서 알려드릴게요",
     options: [
-      '없어져도 크게 문제 없는 여윳돈이에요',
-      '나중에 꼭 필요한 목적자금(주택·노후·학자금 등) 하는 돈이에요',
+      "없어져도 크게 문제 없는 여윳돈이에요",
+      "나중에 꼭 필요한 목적자금\n(주택·노후·학자금 등)\n하는 돈이에요",
     ],
   },
-]
+];
 
-const started = ref(false)
-const step = ref(0)
+const started = ref(false);
+const step = ref(0);
 
-const answers = reactive({})
+const answers = reactive({});
 
-const current = computed(() => questions[step.value])
+const current = computed(() => questions[step.value]);
 
 const previousQuestionTitle = computed(() => {
-  if (step.value === 0) return null
-  return questions[step.value - 1].title
-})
+  if (step.value === 0) return null;
+  return questions[step.value - 1].title;
+});
 
 const progressPct = computed(() => {
-  return ((step.value + 1) / questions.length) * 100
-})
+  return ((step.value + 1) / questions.length) * 100;
+});
 
 function select(i) {
-  answers[step.value] = i
+  answers[step.value] = i;
 }
 
 function next() {
+  if (answers[step.value] === undefined) return;
+
   if (step.value < questions.length - 1) {
-    step.value += 1
+    step.value += 1;
   } else {
-    emit('finish')
+    emit("finish");
   }
 }
 
 function prev() {
   if (step.value > 0) {
-    step.value -= 1
+    step.value -= 1;
   }
 }
 
 onMounted(() => {
   setTimeout(() => {
-    started.value = true
-  }, 2600)
-})
+    started.value = true;
+  }, 2600);
+});
 </script>
 
 <template>
-  <div
-    class="question-intro"
-    :class="{ started }"
-  >
+  <div class="question-intro" :class="{ started }">
     <!-- =========================
          TOP BAR
     ========================== -->
     <header class="top-bar">
-      <div class="avatar" />
+      <BrandLogo />
 
-      <div
-        v-if="started"
-        class="progress-track"
-      >
-        <div
-          class="progress-fill"
-          :style="{ width: progressPct + '%' }"
-        />
+      <div v-if="started" class="progress-track">
+        <div class="progress-fill" :style="{ width: progressPct + '%' }" />
       </div>
     </header>
 
     <!-- =========================
          저장 안내 문구
     ========================== -->
-    <div
-      class="note-wrap"
-      :class="{ settled: started }"
-    >
+    <div class="note-wrap" :class="{ settled: started }">
       <p class="note">
         진단 기록은 저장되지 않아 나중에 다시 확인할 수 없어요.
       </p>
@@ -112,24 +103,15 @@ onMounted(() => {
     <!-- =========================
          인트로 / 이전 질문
     ========================== -->
-    <div
-      class="intro-title-wrap"
-      :class="{ settled: started }"
-    >
+    <div class="intro-title-wrap" :class="{ settled: started }">
       <!-- 첫 번째 질문일 때 -->
-      <h1
-        v-if="step === 0"
-        class="intro-title"
-      >
+      <h1 v-if="step === 0" class="intro-title">
         안녕하세요!<br />
         이제부터 ETF를 쉽게 진단해드릴게요!
       </h1>
 
       <!-- 두 번째 질문부터 -->
-      <h1
-        v-else
-        class="intro-title previous-title"
-      >
+      <h1 v-else class="intro-title previous-title">
         {{ previousQuestionTitle }}
       </h1>
     </div>
@@ -137,26 +119,15 @@ onMounted(() => {
     <!-- =========================
          문서 + 펜 아이콘
     ========================== -->
-    <div
-      class="icon-stage"
-      :class="{ settled: started }"
-    >
-      <img
-        :src="searchDocumentIcon"
-        class="rise-icon"
-        alt=""
-      />
+    <div class="icon-stage" :class="{ settled: started }">
+      <img :src="searchDocumentIcon" class="rise-icon" alt="" />
     </div>
 
     <!-- =========================
          QUESTION
     ========================== -->
     <transition name="qrise">
-      <div
-        v-if="started"
-        :key="step"
-        class="question-block"
-      >
+      <div v-if="started" :key="step" class="question-block">
         <div class="question-head">
           <h2 class="q-title">
             {{ current.title }}
@@ -193,18 +164,14 @@ onMounted(() => {
 
         <!-- 이전 / 다음 -->
         <div class="nav">
-          <button
-            v-if="step > 0"
-            type="button"
-            class="btn ghost"
-            @click="prev"
-          >
+          <button v-if="step > 0" type="button" class="btn ghost" @click="prev">
             이전으로
           </button>
 
           <button
             type="button"
             class="btn primary"
+            :disabled="answers[step] === undefined"
             @click="next"
           >
             다음으로
@@ -244,7 +211,6 @@ onMounted(() => {
   color: #ffffff;
 }
 
-
 /* =================================================
    TOP BAR
 ================================================= */
@@ -263,18 +229,6 @@ onMounted(() => {
 
   height: 44px;
 }
-
-.avatar {
-  width: 38px;
-  height: 38px;
-
-  flex-shrink: 0;
-
-  border-radius: 50%;
-
-  background: #dedede;
-}
-
 
 /* =================================================
    PROGRESS
@@ -304,13 +258,10 @@ onMounted(() => {
 
   border-radius: inherit;
 
-  background: #1588d8;
+  background: #3b82f6;
 
-  transition:
-    width 0.5s
-    cubic-bezier(0.16, 1, 0.3, 1);
+  transition: width 0.5s cubic-bezier(0.16, 1, 0.3, 1);
 }
-
 
 /* =================================================
    SAVE NOTE
@@ -352,11 +303,7 @@ onMounted(() => {
 
   opacity: 0;
 
-  animation:
-    intro-rise
-    0.8s
-    cubic-bezier(0.16, 1, 0.3, 1)
-    forwards;
+  animation: intro-rise 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 
   animation-delay: 0.75s;
 
@@ -364,7 +311,6 @@ onMounted(() => {
     font-size 0.8s ease,
     color 0.8s ease;
 }
-
 
 /* 질문 시작 후 우측 상단 */
 
@@ -390,7 +336,6 @@ onMounted(() => {
 
   white-space: nowrap;
 }
-
 
 /* =================================================
    INTRO / PREVIOUS QUESTION
@@ -433,11 +378,7 @@ onMounted(() => {
 
   opacity: 0;
 
-  animation:
-    intro-rise
-    0.8s
-    cubic-bezier(0.16, 1, 0.3, 1)
-    forwards;
+  animation: intro-rise 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 
   animation-delay: 0.15s;
 
@@ -446,7 +387,6 @@ onMounted(() => {
     color 0.8s ease,
     line-height 0.8s ease;
 }
-
 
 /* 질문 시작 후 */
 
@@ -472,7 +412,6 @@ onMounted(() => {
   letter-spacing: -0.1px;
 }
 
-
 /* 이전 질문 */
 
 .intro-title-wrap.settled .previous-title {
@@ -486,7 +425,6 @@ onMounted(() => {
 
   letter-spacing: -0.15px;
 }
-
 
 /* =================================================
    INTRO ICON
@@ -522,7 +460,6 @@ onMounted(() => {
     transform 1s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-
 /* 실제 아이콘 */
 
 .rise-icon {
@@ -532,17 +469,9 @@ onMounted(() => {
 
   opacity: 0;
 
-  filter:
-    drop-shadow(
-      0 16px 32px
-      rgba(60, 100, 220, 0.4)
-    );
+  filter: drop-shadow(0 16px 32px rgba(60, 100, 220, 0.4));
 
-  animation:
-    intro-rise
-    1s
-    cubic-bezier(0.16, 1, 0.3, 1)
-    forwards;
+  animation: intro-rise 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 
   animation-delay: 1.35s;
 
@@ -550,7 +479,6 @@ onMounted(() => {
     opacity 1s ease,
     filter 1s ease;
 }
-
 
 /* 질문 시작 후 배경 아이콘 */
 
@@ -561,9 +489,7 @@ onMounted(() => {
   width: 460px;
   height: 460px;
 
-  transform:
-    translate(-50%, -50%)
-    scale(2);
+  transform: translate(-50%, -50%) scale(2);
 }
 
 .icon-stage.settled .rise-icon {
@@ -574,14 +500,8 @@ onMounted(() => {
 
   opacity: 0.1;
 
-  filter:
-    blur(1px)
-    drop-shadow(
-      0 15px 40px
-      rgba(70, 120, 230, 0.18)
-    );
+  filter: blur(1px) drop-shadow(0 15px 40px rgba(70, 120, 230, 0.18));
 }
-
 
 /* =================================================
    INTRO ANIMATION
@@ -591,18 +511,15 @@ onMounted(() => {
   from {
     opacity: 0;
 
-    transform:
-      translateY(35px);
+    transform: translateY(35px);
   }
 
   to {
     opacity: 1;
 
-    transform:
-      translateY(0);
+    transform: translateY(0);
   }
 }
-
 
 /* =================================================
    QUESTION AREA
@@ -622,8 +539,7 @@ onMounted(() => {
 
   width: min(90%, 1180px);
 
-  transform:
-    translate(-50%, -50%);
+  transform: translate(-50%, -50%);
 
   display: flex;
 
@@ -635,7 +551,6 @@ onMounted(() => {
 
   margin-top: -10px;
 }
-
 
 /* =================================================
    QUESTION HEAD
@@ -669,14 +584,13 @@ onMounted(() => {
 .q-sub {
   margin: 0;
 
-  color: #1597dc;
+  color: #4da3ff;
 
   font-size: 15px;
   font-weight: 500;
 
   line-height: 1.5;
 }
-
 
 /* =================================================
    OPTIONS
@@ -689,32 +603,26 @@ onMounted(() => {
 
   display: grid;
 
-  grid-template-columns:
-    repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
 
   gap: 28px;
 }
-
 
 /* 3개 */
 
 .options.options-3 {
   max-width: 900px;
 
-  grid-template-columns:
-    repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
-
 
 /* 2개 */
 
 .options.options-2 {
   max-width: 620px;
 
-  grid-template-columns:
-    repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
-
 
 /* =================================================
    OPTION CARD
@@ -725,9 +633,7 @@ onMounted(() => {
 
   height: 250px;
 
-  padding:
-    28px
-    24px;
+  padding: 28px 24px;
 
   box-sizing: border-box;
 
@@ -755,9 +661,7 @@ onMounted(() => {
 
   cursor: pointer;
 
-  box-shadow:
-    0 2px 5px
-    rgba(0, 0, 0, 0.05);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
 
   transition:
     background 0.2s ease,
@@ -770,30 +674,25 @@ onMounted(() => {
   display: block;
 
   max-width: 200px;
+
+  white-space: pre-line;
 }
 
 .option:hover {
-  transform:
-    translateY(-3px);
+  transform: translateY(-3px);
 
-  box-shadow:
-    0 8px 24px
-    rgba(0, 0, 0, 0.12);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
 }
-
 
 /* 선택 */
 
 .option.selected {
-  background: #1188d4;
+  background: #3b82f6;
 
   color: #ffffff;
 
-  box-shadow:
-    0 10px 24px
-    rgba(17, 136, 212, 0.22);
+  box-shadow: 0 10px 24px rgba(59, 130, 246, 0.22);
 }
-
 
 /* =================================================
    NAVIGATION
@@ -813,9 +712,7 @@ onMounted(() => {
 .btn {
   min-width: 88px;
 
-  padding:
-    13px
-    26px;
+  padding: 13px 26px;
 
   border: none;
 
@@ -834,32 +731,38 @@ onMounted(() => {
 }
 
 .btn:hover {
-  transform:
-    translateY(-1px);
+  transform: translateY(-1px);
+}
+
+.btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+  transform: none;
 }
 
 .btn.primary {
-  background: #118ee4;
+  background: #3b82f6;
 
   color: #ffffff;
 }
 
 .btn.primary:hover {
-  background: #0c7fd0;
+  background: #2f6fe0;
+}
+
+.btn.primary:disabled:hover {
+  background: #3b82f6;
 }
 
 .btn.ghost {
-  background:
-    rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.1);
 
   color: #d6dbe5;
 }
 
 .btn.ghost:hover {
-  background:
-    rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.15);
 }
-
 
 /* =================================================
    QUESTION TRANSITION
@@ -867,10 +770,8 @@ onMounted(() => {
 
 .qrise-enter-active {
   transition:
-    opacity 0.6s
-    cubic-bezier(0.16, 1, 0.3, 1),
-    transform 0.6s
-    cubic-bezier(0.16, 1, 0.3, 1);
+    opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .qrise-leave-active {
@@ -882,30 +783,20 @@ onMounted(() => {
 .qrise-enter-from {
   opacity: 0;
 
-  transform:
-    translate(
-      -50%,
-      calc(-50% + 45px)
-    );
+  transform: translate(-50%, calc(-50% + 45px));
 }
 
 .qrise-enter-to {
   opacity: 1;
 
-  transform:
-    translate(-50%, -50%);
+  transform: translate(-50%, -50%);
 }
 
 .qrise-leave-to {
   opacity: 0;
 
-  transform:
-    translate(
-      -50%,
-      calc(-50% - 15px)
-    );
+  transform: translate(-50%, calc(-50% - 15px));
 }
-
 
 /* =================================================
    낮은 데스크톱
@@ -919,8 +810,7 @@ onMounted(() => {
   .question-block {
     top: 55%;
 
-    width:
-      min(90%, 1080px);
+    width: min(90%, 1080px);
   }
 
   .q-title {
@@ -947,7 +837,6 @@ onMounted(() => {
     margin-top: 40px;
   }
 }
-
 
 /* =================================================
    TABLET
@@ -977,13 +866,9 @@ onMounted(() => {
     top: auto;
     left: auto;
 
-    width:
-      calc(100% - 48px);
+    width: calc(100% - 48px);
 
-    margin:
-      180px
-      auto
-      0;
+    margin: 180px auto 0;
 
     transform: none;
   }
@@ -999,8 +884,7 @@ onMounted(() => {
   .options {
     max-width: 720px;
 
-    grid-template-columns:
-      repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
 
     gap: 18px;
   }
@@ -1008,8 +892,7 @@ onMounted(() => {
   .options.options-3 {
     max-width: 720px;
 
-    grid-template-columns:
-      repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .options.options-2 {
@@ -1025,27 +908,21 @@ onMounted(() => {
   .icon-stage.settled {
     left: 80%;
 
-    transform:
-      translate(-50%, -50%)
-      scale(1.65);
+    transform: translate(-50%, -50%) scale(1.65);
   }
 
   .qrise-enter-from {
-    transform:
-      translateY(40px);
+    transform: translateY(40px);
   }
 
   .qrise-enter-to {
-    transform:
-      translateY(0);
+    transform: translateY(0);
   }
 
   .qrise-leave-to {
-    transform:
-      translateY(-15px);
+    transform: translateY(-15px);
   }
 }
-
 
 /* =================================================
    MOBILE
@@ -1068,8 +945,8 @@ onMounted(() => {
   }
 
   .avatar {
-    width: 32px;
-    height: 32px;
+    width: 92px;
+    height: auto;
   }
 
   .progress-track {
@@ -1124,10 +1001,7 @@ onMounted(() => {
   .question-block {
     width: auto;
 
-    margin:
-      175px
-      20px
-      0;
+    margin: 175px 20px 0;
   }
 
   .question-head {
@@ -1159,9 +1033,7 @@ onMounted(() => {
   .option {
     height: 125px;
 
-    padding:
-      20px
-      18px;
+    padding: 20px 18px;
 
     font-size: 14px;
   }
@@ -1177,9 +1049,7 @@ onMounted(() => {
   .btn {
     min-width: 82px;
 
-    padding:
-      12px
-      22px;
+    padding: 12px 22px;
 
     font-size: 13px;
   }
@@ -1188,9 +1058,7 @@ onMounted(() => {
     left: 80%;
     top: 87%;
 
-    transform:
-      translate(-50%, -50%)
-      scale(1.25);
+    transform: translate(-50%, -50%) scale(1.25);
   }
 }
 </style>

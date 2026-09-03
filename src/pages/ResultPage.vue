@@ -1,84 +1,96 @@
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
-import ProductCard from '../components/ProductCard.vue'
-import BaseBadge from '../components/base/BaseBadge.vue'
-import ChatWidget from '../components/ChatWidget.vue'
+import { ref, onMounted, onUnmounted } from "vue";
+import ProductCard from "../components/ProductCard.vue";
+import BaseBadge from "../components/base/BaseBadge.vue";
+import ChatWidget from "../components/ChatWidget.vue";
+import BrandLogo from "../components/base/BrandLogo.vue";
 
-const emit = defineEmits(['back', 'retry', 'open', 'browse'])
+const emit = defineEmits(["back", "retry", "open", "browse"]);
 
 // S6(진단 결과) 공통 추천 칩 — 종목/조건과 무관하게 동일하게 노출.
-const chatSuggestions = ['이 상품, 제 조건에 맞나요?', '왜 이런 결과가 나왔나요?', '매수 전에 뭘 더 확인해야 하나요?']
+const chatSuggestions = [
+  "이 상품, 제 조건에 맞나요?",
+  "왜 이런 결과가 나왔나요?",
+  "매수 전에 뭘 더 확인해야 하나요?",
+];
 
-const productName = 'TIGER 미국S&P500레버리지(합성 H)'
+const productName = "TIGER 미국S&P500레버리지(합성 H)";
 
 const points = [
   {
-    tag: '주식을 직접 사지 않고 증권사와 약속만 했어요',
-    desc: '주식 대신 증권사와 계약만 맺는 방식이에요.\n증권사에 문제가 생기면 투자에 영향을 줄 수 있어요.',
+    tag: "주식을 직접 사지 않고 증권사와 약속만 했어요",
+    desc: "주식 대신 증권사와 계약해 수익을 받는 ETF입니다.\n증권사에 문제가 생기면 투자에도 영향을 줄 수 있어요.",
   },
   {
-    tag: '환율이 오르내려도 크게 상관없어요',
-    desc: '환율이 바뀌어도 영향을 덜 받도록 만들었어요.\n대신 이를 위한 비용이 들어요.',
+    tag: "환율이 오르내려도 크게 상관없어요",
+    desc: "환율이 바뀌어도 영향을 덜 받도록 막아줘요!\n대신 이를 위한 비용이 들어요.",
   },
-]
+];
 
 const recommended = [
-  { brand: 'kodex' },
-  { brand: 'kodex' },
-  { brand: 'kodex' },
-  { brand: 'globalx' },
-  { brand: 'kodex' },
-  { brand: 'kodex' },
-  { brand: 'globalx' },
-  { brand: 'kodex' },
-]
+  { brand: "kodex" },
+  { brand: "kodex" },
+  { brand: "kodex" },
+  { brand: "globalx" },
+  { brand: "kodex" },
+  { brand: "kodex" },
+  { brand: "globalx" },
+  { brand: "kodex" },
+];
 
-const recoTrack = ref(null)
+const recoTrack = ref(null);
 
 function scrollRecoNext() {
-  const el = recoTrack.value
-  if (!el) return
-  const amount = el.clientWidth * 0.8
-  const atEnd = el.scrollLeft + el.clientWidth >= el.scrollWidth - 4
-  el.scrollTo({ left: atEnd ? 0 : el.scrollLeft + amount, behavior: 'smooth' })
+  const el = recoTrack.value;
+  if (!el) return;
+  const amount = el.clientWidth * 0.8;
+  const atEnd = el.scrollLeft + el.clientWidth >= el.scrollWidth - 4;
+  el.scrollTo({ left: atEnd ? 0 : el.scrollLeft + amount, behavior: "smooth" });
 }
 
-let observer = null
+let observer = null;
 
 onMounted(() => {
-  const els = document.querySelectorAll('.reveal')
+  const els = document.querySelectorAll(".reveal");
   observer = new IntersectionObserver(
     (entries) => {
       entries.forEach((entry) => {
         if (entry.isIntersecting) {
-          entry.target.classList.add('in-view')
-          observer.unobserve(entry.target)
+          entry.target.classList.add("in-view");
+          observer.unobserve(entry.target);
         }
-      })
+      });
     },
-    { threshold: 0.15, rootMargin: '0px 0px -60px 0px' }
-  )
-  els.forEach((el) => observer.observe(el))
-})
+    { threshold: 0.15, rootMargin: "0px 0px -60px 0px" },
+  );
+  els.forEach((el) => observer.observe(el));
+});
 
 onUnmounted(() => {
-  if (observer) observer.disconnect()
-})
+  if (observer) observer.disconnect();
+});
 </script>
 
 <template>
   <div class="result-page">
     <header class="top-bar">
-      <div class="avatar" />
+      <BrandLogo />
 
       <div class="badges">
-        <BaseBadge tone="purple">로그인 필요해요</BaseBadge>
-        <BaseBadge tone="purple">개인정보 미수집</BaseBadge>
+        <!-- <BaseBadge tone="purple">로그인 불필요</BaseBadge>
+        <BaseBadge tone="purple">개인정보 미수집</BaseBadge> -->
       </div>
     </header>
 
     <button type="button" class="back-btn" @click="emit('back')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2.2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
         <path d="M15 18 9 12l6-6" />
       </svg>
     </button>
@@ -89,8 +101,10 @@ onUnmounted(() => {
       </h1>
 
       <p class="hero-sub reveal">
-        이 상품은 하루 기준으로 2배를 따라가도록 매일 다시 계산(리밸런싱)합니다.<br />
-        오르내림이 반복되면 5년 뒤에는 따라가는 지수(기초지수)가 제자리여도 원금이 줄어들 수 있습니다.
+        이 상품은 하루 기준으로 2배를 따라가도록 매일 다시
+        계산(리밸런싱)합니다.<br class="sub-break" />
+        오르내림이 반복되면 5년 뒤에는 따라가는 지수(기초지수)가 제자리여도
+        원금이 줄어들 수 있습니다.
       </p>
     </section>
 
@@ -116,15 +130,17 @@ onUnmounted(() => {
         </div>
       </div>
 
+      <button type="button" class="retry-btn reveal" @click="emit('retry')">
+        조건 수정해서 다시 진단받기
+      </button>
+
       <div class="source-box reveal">
         <p class="source-label">*상품설명서(투자설명서) 근거 원문</p>
         <p class="source-text">
-          "기초지수가 일정 기간 후 최초 수준을 회복하더라도, 일별 재산정 구조로 인해 펀드의 누적수익률은
-          최초 수준을 회복하지 못할 수 있습니다."
+          "기초지수가 일정 기간 후 최초 수준을 회복하더라도, 일별 재산정 구조로
+          인해 펀드의 누적수익률은 최초 수준을 회복하지 못할 수 있습니다."
         </p>
       </div>
-
-      <button type="button" class="retry-btn reveal" @click="emit('retry')">조건 수정해서 다시 진단받기</button>
     </section>
 
     <section class="reco-section reveal">
@@ -137,8 +153,20 @@ onUnmounted(() => {
           </div>
         </div>
 
-        <button type="button" class="reco-next" aria-label="다음 상품 보기" @click="scrollRecoNext">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+        <button
+          type="button"
+          class="reco-next"
+          aria-label="다음 상품 보기"
+          @click="scrollRecoNext"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.4"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
             <path d="m9 6 6 6-6 6" />
           </svg>
         </button>
@@ -159,20 +187,17 @@ onUnmounted(() => {
   min-height: 100svh;
   box-sizing: border-box;
   padding: clamp(24px, 2.4vw, 40px) clamp(28px, 5vw, 80px) 60px;
-  background: linear-gradient(180deg, var(--color-bg-page-deep) 0%, var(--color-bg-page-mid) 30%, var(--color-bg-page) 100%);
+  background: linear-gradient(
+    180deg,
+    var(--color-bg-page-deep) 0%,
+    var(--color-bg-page-mid) 30%,
+    var(--color-bg-page) 100%
+  );
 }
 
 .top-bar {
   display: flex;
   align-items: center;
-}
-
-.avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: #d9d9d9;
-  flex-shrink: 0;
 }
 
 .badges {
@@ -213,7 +238,9 @@ section {
 .reveal {
   opacity: 0;
   transform: translateY(30px);
-  transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1), transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+  transition:
+    opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .reveal.in-view {
@@ -254,8 +281,16 @@ section {
 }
 
 .hero-sub {
+  /*
+    부모(.hero-section)가 flex + align-items:center라서, width를 못박아두지
+    않으면 이 문단이 "가장 긴 줄"의 내용 너비에 맞춰 shrink-wrap된다.
+    그 상태에서는 폰트 렌더링이 아주 조금만 달라져도(브라우저/폰트 차이)
+    나머지 줄이 그 너비를 살짝 넘겨서 혼자 다음 줄로 밀려나는 문제가 생김.
+    width:100%로 고정해서 항상 max-width(560px)까지 안정적으로 차지하게 한다.
+  */
+  width: 100%;
   margin: clamp(20px, 2vw, 30px) auto 0;
-  max-width: 560px;
+  max-width: 620px;
   color: #8891a6;
   font-size: clamp(13px, 1vw, 15px);
   line-height: 1.7;
@@ -306,13 +341,18 @@ section {
 }
 
 .also-icon {
-  width: 26px;
-  height: 26px;
+  width: clamp(30px, 2.6vw, 38px);
+  height: clamp(30px, 2.6vw, 38px);
   margin: 0 auto 10px;
   border-radius: 50%;
-  background: #3b82f6;
+  background: radial-gradient(
+    circle at 32% 28%,
+    #bde3fa 0%,
+    #4aa8e8 55%,
+    #0f6fc4 100%
+  );
   color: #fff;
-  font-size: 14px;
+  font-size: clamp(15px, 1.3vw, 19px);
   font-weight: 700;
   display: flex;
   align-items: center;
@@ -330,7 +370,7 @@ section {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: clamp(14px, 1.4vw, 22px);
-  text-align: left;
+  text-align: center;
 }
 
 .also-card {
@@ -341,12 +381,13 @@ section {
 
 .also-tag {
   display: inline-block;
-  padding: 5px 12px;
-  border-radius: 999px;
-  background: #3b82f6;
+  padding: 1px 5px;
+  border-radius: 2px;
+  background: #0099ff;
   color: #fff;
-  font-size: clamp(11px, 0.9vw, 13px);
-  font-weight: 600;
+  font-size: clamp(14px, 1.15vw, 17px);
+  font-weight: 700;
+  white-space: nowrap;
 }
 
 .also-desc {
@@ -354,14 +395,11 @@ section {
   color: var(--color-fg-muted);
   font-size: clamp(12px, 0.95vw, 14px);
   line-height: 1.6;
+  white-space: pre-line;
 }
 
 .source-box {
   margin-top: clamp(24px, 2.4vw, 36px);
-  padding: clamp(18px, 1.8vw, 26px);
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid var(--color-border-default);
   text-align: left;
 }
 
@@ -453,7 +491,11 @@ section {
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: background 0.2s ease, border-color 0.2s ease, transform 0.15s ease, color 0.2s ease;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.15s ease,
+    color 0.2s ease;
 }
 
 .reco-next svg {
@@ -471,6 +513,15 @@ section {
 @media (max-width: 700px) {
   .result-page {
     padding: 20px 20px 48px;
+  }
+
+  /*
+    좁은 화면에서는 강제 줄바꿈을 없애고 자연스럽게 흘러가게 둔다.
+    (고정 <br/> + 좁아진 max-width 컬럼이 겹치면 두 번째 문장이 또 한 번
+    꺾여서 마지막 줄에 "있습니다."만 남는 고아 텍스트가 생겼었음)
+  */
+  .sub-break {
+    display: none;
   }
 
   .also-cards {

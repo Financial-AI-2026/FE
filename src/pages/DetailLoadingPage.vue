@@ -1,26 +1,27 @@
 <script setup>
-import { onMounted } from 'vue'
-import BaseBadge from '../components/base/BaseBadge.vue'
-import ChatWidget from '../components/ChatWidget.vue'
-import docSearchIcon from '../assets/icons/loading-doc-search.png'
+import { onMounted } from "vue";
+import BaseBadge from "../components/base/BaseBadge.vue";
+import BrandLogo from "../components/base/BrandLogo.vue";
+import ChatWidget from "../components/ChatWidget.vue";
+import docSearchIcon from "../assets/icons/loading-doc-search.png";
 
-const emit = defineEmits(['done'])
+const emit = defineEmits(["done"]);
 
 onMounted(() => {
   setTimeout(() => {
-    emit('done')
-  }, 1800)
-})
+    emit("done");
+  }, 1800);
+});
 </script>
 
 <template>
   <div class="loading-page">
     <header class="top-bar">
-      <div class="avatar" />
-      <div class="badges">
-        <BaseBadge tone="purple">로그인 필요해요</BaseBadge>
+      <BrandLogo />
+      <!-- <div class="badges">
+        <BaseBadge tone="purple">로그인 불필요</BaseBadge>
         <BaseBadge tone="purple">개인정보 미수집</BaseBadge>
-      </div>
+      </div> -->
     </header>
 
     <div class="content">
@@ -44,21 +45,18 @@ onMounted(() => {
   padding: clamp(24px, 2.4vw, 40px) clamp(28px, 5vw, 80px) 60px;
   display: flex;
   flex-direction: column;
-  background: linear-gradient(180deg, var(--color-bg-page-deep) 0%, var(--color-bg-page-mid) 45%, var(--color-bg-page) 100%);
+  background: linear-gradient(
+    180deg,
+    var(--color-bg-page-deep) 0%,
+    var(--color-bg-page-mid) 45%,
+    var(--color-bg-page) 100%
+  );
 }
 
 .top-bar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-}
-
-.avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: #d9d9d9;
-  flex-shrink: 0;
 }
 
 .badges {
@@ -90,7 +88,7 @@ onMounted(() => {
 }
 
 .loading-icon {
-  width: clamp(96px, 9vw, 140px);
+  width: clamp(200px, 20vw, 280px);
   height: auto;
   margin: 20px 0;
   animation: loading-pulse 1.8s ease-in-out infinite;
