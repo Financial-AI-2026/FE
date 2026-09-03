@@ -21,6 +21,10 @@ body {
   color: var(--color-fg);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  /* 한글은 기본값(word-break: normal)이 음절 단위로도 줄바꿈을 허용해서,
+     좁은 화면에서 단어 중간이 잘리는 경우가 잦다. 항상 어절(띄어쓰기)
+     단위로만 줄바꿈되게 전역으로 고정한다. */
+  word-break: keep-all;
 }
 
 button {

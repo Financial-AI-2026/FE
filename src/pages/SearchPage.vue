@@ -1,36 +1,44 @@
 <script setup>
-import { ref } from 'vue'
-import ProductCard from '../components/ProductCard.vue'
-import BaseBadge from '../components/base/BaseBadge.vue'
+import { ref } from "vue";
+import ProductCard from "../components/ProductCard.vue";
+import BaseBadge from "../components/base/BaseBadge.vue";
+import BrandLogo from "../components/base/BrandLogo.vue";
 
-const emit = defineEmits(['back', 'open'])
+const emit = defineEmits(["back", "open"]);
 
-const query = ref('')
+const query = ref("");
 
 const results = [
-  { brand: 'kodex' },
-  { brand: 'kodex' },
-  { brand: 'kodex' },
-  { brand: 'globalx' },
-  { brand: 'kodex', disabled: true },
-]
+  { brand: "kodex" },
+  { brand: "kodex" },
+  { brand: "kodex" },
+  { brand: "globalx" },
+  { brand: "kodex", disabled: true },
+];
 
-const analyzedOnly = ref(false)
+const analyzedOnly = ref(false);
 </script>
 
 <template>
   <div class="search-page">
     <header class="top-bar">
       <button type="button" class="back-btn" @click="emit('back')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
           <path d="M15 18 9 12l6-6" />
         </svg>
       </button>
 
-      <div class="avatar" />
+      <BrandLogo />
 
       <div class="badges">
-        <BaseBadge tone="purple">로그인 필요해요</BaseBadge>
+        <BaseBadge tone="purple">로그인 불필요</BaseBadge>
         <BaseBadge tone="purple">개인정보 미수집</BaseBadge>
       </div>
     </header>
@@ -38,9 +46,20 @@ const analyzedOnly = ref(false)
     <h1>찾고 싶은 금융 상품을 검색해보세요!</h1>
 
     <div class="search-bar">
-      <input v-model="query" type="text" placeholder="상품명, 티커, 회사 이름으로 검색" />
+      <input
+        v-model="query"
+        type="text"
+        placeholder="상품명, 티커, 회사 이름으로 검색"
+      />
       <button type="button" class="search-btn" aria-label="검색">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
           <circle cx="11" cy="11" r="7" />
           <line x1="21" y1="21" x2="16.65" y2="16.65" />
         </svg>
@@ -49,8 +68,20 @@ const analyzedOnly = ref(false)
 
     <div class="result-bar">
       <span class="count">검색 결과 총 {{ results.length }}건</span>
-      <button type="button" class="toggle" :class="{ on: analyzedOnly }" @click="analyzedOnly = !analyzedOnly">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <button
+        type="button"
+        class="toggle"
+        :class="{ on: analyzedOnly }"
+        @click="analyzedOnly = !analyzedOnly"
+      >
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
           <polyline points="20 6 9 17 4 12" />
         </svg>
         분석 완료 상품만 보기
@@ -75,7 +106,12 @@ const analyzedOnly = ref(false)
   min-height: 100svh;
   box-sizing: border-box;
   padding: clamp(24px, 2.4vw, 40px) clamp(28px, 5vw, 80px) 60px;
-  background: linear-gradient(180deg, var(--color-bg-page-deep) 0%, var(--color-bg-page-mid) 40%, var(--color-bg-page) 100%);
+  background: linear-gradient(
+    180deg,
+    var(--color-bg-page-deep) 0%,
+    var(--color-bg-page-mid) 40%,
+    var(--color-bg-page) 100%
+  );
 }
 
 .top-bar {
@@ -103,14 +139,6 @@ const analyzedOnly = ref(false)
   height: 16px;
 }
 
-.avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: #d9d9d9;
-  flex-shrink: 0;
-}
-
 .badges {
   margin-left: auto;
   display: flex;
@@ -131,7 +159,8 @@ h1 {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: clamp(6px, 0.6vw, 10px) clamp(8px, 0.8vw, 12px) clamp(6px, 0.6vw, 10px) clamp(18px, 1.6vw, 26px);
+  padding: clamp(6px, 0.6vw, 10px) clamp(8px, 0.8vw, 12px)
+    clamp(6px, 0.6vw, 10px) clamp(18px, 1.6vw, 26px);
   border-radius: 16px;
   background: #0f1a2e;
   border: 1px solid var(--color-border-subtle-strong);
