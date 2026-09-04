@@ -1,6 +1,6 @@
 <script setup>
-import { ref, onMounted, onUnmounted, nextTick } from 'vue'
-import chatbotLogo from '../assets/images/Logo.png'
+import { computed, ref, onMounted, onUnmounted, nextTick } from 'vue'
+import chatbotLogo from '../assets/images/chat_logo.png'
 
 const props = defineProps({
   // 화면(S4/S6)마다 다른 추천 질문 칩 — 클릭해도 전송되지 않는 예시 텍스트일 뿐이다.
@@ -32,8 +32,12 @@ const draft = ref('')
 const messages = ref([])
 const bodyRef = ref(null)
 const showHint = ref(false)
-const followupChips = ref(false)
 let hintTimer = null
+
+const conversationComplete = computed(() => {
+  const lastMessage = messages.value.at(-1)
+  return lastMessage?.role === 'ai' && !lastMessage.typing
+})
 
 // SC-01 용어 설명 — 정확히 일치하는 질문에 대한 사전 정의.
 const glossary = {
@@ -204,7 +208,6 @@ function send(text) {
   const question = text.trim()
   if (!question) return
 
-  followupChips.value = false
   messages.value.push({ role: 'user', text: question })
   messages.value.push({ role: 'ai', text: '', typing: true, kind: 'normal', action: null })
   const aiIndex = messages.value.length - 1
@@ -217,7 +220,6 @@ function send(text) {
       messages.value[aiIndex] = { role: 'ai', typing: false, text: intent.text, kind: intent.kind, action: intent.action || null }
     } else {
       messages.value[aiIndex] = { role: 'ai', typing: false, text: fallbackAnswer, kind: 'normal', action: null }
-      followupChips.value = true
     }
     scrollToBottom()
   }, 1100)
@@ -232,29 +234,47 @@ function runAction(action) {
   emit(action.event)
   open.value = false
 }
+
+function endConversation() {
+  open.value = false
+  draft.value = ''
+  messages.value = []
+}
+
+// 답변 데이터에 들어 있는 줄바꿈과 <br> 태그만 허용한다.
+// 다른 HTML은 이스케이프해 답변 문자열이 마크업으로 실행되지 않게 한다.
+function formatAnswer(text) {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/&lt;br\s*\/?&gt;/gi, '<br>')
+    .replace(/\n/g, '<br>')
+}
 </script>
 
 <template>
-  <div class="chat-anchor">
-    <Transition name="hint-fade">
-      <div v-if="showHint && !open" class="chat-hint">모르는 부분은 AI에게 물어보세요</div>
-    </Transition>
+  <Teleport to="body">
+    <div class="chat-anchor">
+      <Transition name="hint-fade">
+        <div v-if="showHint && !open" class="chat-hint">모르는 부분은 AI에게 물어보세요</div>
+      </Transition>
 
-    <button
-      type="button"
-      class="chat-fab"
-      :class="{ disabled }"
-      :disabled="disabled"
-      aria-label="챗봇 열기"
-      @click="toggle"
-    >
-      <img :src="chatbotLogo" class="chat-fab-logo" alt="" />
-    </button>
-  </div>
+      <button
+        type="button"
+        class="chat-fab"
+        :class="{ disabled, open }"
+        :disabled="disabled"
+        :aria-label="open ? '챗봇 닫기' : '챗봇 열기'"
+        @click="toggle"
+      >
+        <img :src="chatbotLogo" class="chat-fab-logo" alt="" />
+      </button>
+    </div>
 
-  <Transition name="chat-fade">
-    <div v-if="open" class="chat-overlay" @click.self="toggle">
-      <div class="chat-panel">
+    <Transition name="chat-fade">
+      <div v-if="open" class="chat-overlay" @click.self="toggle">
+        <div class="chat-panel" :class="{ 'has-messages': messages.length > 0 }">
 
         <button type="button" class="chat-close" aria-label="닫기" @click="toggle">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -282,7 +302,7 @@ function runAction(action) {
               </div>
 
               <div v-else class="chat-answer" :class="{ reject: m.kind === 'reject' }">
-                <p>{{ m.text }}</p>
+                <p v-html="formatAnswer(m.text)" />
                 <button
                   v-if="m.action"
                   type="button"
@@ -294,9 +314,14 @@ function runAction(action) {
               </div>
             </div>
 
-            <div v-if="followupChips" class="chat-suggestions chat-suggestions-followup">
-              <span v-for="s in suggestions" :key="s" class="chat-chip">{{ s }}</span>
-            </div>
+            <button
+              v-if="conversationComplete"
+              type="button"
+              class="chat-end-btn"
+              @click="endConversation"
+            >
+              대화 끝내기
+            </button>
           </div>
         </div>
 
@@ -309,17 +334,19 @@ function runAction(action) {
             </svg>
           </button>
         </form>
+        </div>
       </div>
-    </div>
-  </Transition>
+    </Transition>
+  </Teleport>
 </template>
 
 <style scoped>
 .chat-anchor {
+  /* viewport를 기준으로 두어 페이지를 스크롤해도 사용자를 따라간다. */
   position: fixed;
   right: 28px;
   bottom: 28px;
-  z-index: var(--z-toast);
+  z-index: calc(var(--z-modal) + 1);
   display: flex;
   align-items: center;
   gap: 10px;
@@ -348,22 +375,35 @@ function runAction(action) {
 }
 
 .chat-fab {
-  width: 46px;
-  height: 46px;
+  width: 59px;
+  height: 59px;
+  padding: 0;
   border-radius: 30%;
   border: none;
-  background: linear-gradient(135deg, #2d3c60 0%, #0a0d16 100%);
+  background: transparent;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   flex-shrink: 0;
+  overflow: hidden;
   box-shadow: 0 6px 18px rgba(10, 14, 25, 0.5);
+  transition: width 0.25s ease, height 0.25s ease, border-radius 0.25s ease,
+    box-shadow 0.25s ease, transform 0.25s ease;
+}
+
+.chat-fab.open {
+  width: 72px;
+  height: 72px;
+  border-radius: 28%;
+  box-shadow: 0 10px 28px rgba(10, 14, 25, 0.55);
 }
 
 .chat-fab-logo {
-  width: 60%;
-  height: auto;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
 .chat-fab.disabled {
@@ -396,6 +436,16 @@ function runAction(action) {
   overflow: hidden;
 }
 
+.chat-panel.has-messages::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  z-index: 2;
+  height: 82px;
+  pointer-events: none;
+  background: linear-gradient(to bottom, #fff 12%, rgba(255, 255, 255, 0));
+}
+
 .chat-pin-notice {
   position: absolute;
   top: 18px;
@@ -411,7 +461,7 @@ function runAction(action) {
   position: absolute;
   top: 18px;
   right: 18px;
-  z-index: 1;
+  z-index: 3;
   width: 32px;
   height: 32px;
   border-radius: 50%;
@@ -437,7 +487,7 @@ function runAction(action) {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding: 40px 40px 16px;
+  padding: 64px 72px 16px 40px;
 }
 
 .chat-empty {
@@ -536,9 +586,21 @@ function runAction(action) {
   background: #dfeaff;
 }
 
-.chat-suggestions-followup {
-  margin-top: 4px;
-  justify-content: flex-start;
+.chat-end-btn {
+  align-self: center;
+  margin-top: 2px;
+  padding: 7px 13px;
+  border: 1px solid #cfd3da;
+  border-radius: 999px;
+  background: #fff;
+  color: #9aa3b5;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.chat-end-btn:hover {
+  border-color: #9aa3b5;
+  color: #687386;
 }
 
 .chat-typing {
@@ -652,7 +714,12 @@ function runAction(action) {
 
 @media (max-width: 560px) {
   .chat-body {
-    padding: 48px 24px 16px;
+    padding: 64px 56px 16px 24px;
+  }
+
+  .chat-anchor {
+    right: 16px;
+    bottom: 16px;
   }
 
   .chat-input-bar {
