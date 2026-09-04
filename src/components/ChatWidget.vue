@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, onMounted, onUnmounted, nextTick } from 'vue'
 import chatbotLogo from '../assets/images/chat_logo.png'
 
 const props = defineProps({
@@ -33,11 +33,6 @@ const messages = ref([])
 const bodyRef = ref(null)
 const showHint = ref(false)
 let hintTimer = null
-
-const conversationComplete = computed(() => {
-  const lastMessage = messages.value.at(-1)
-  return lastMessage?.role === 'ai' && !lastMessage.typing
-})
 
 // SC-01 용어 설명 — 정확히 일치하는 질문에 대한 사전 정의.
 const glossary = {
@@ -235,12 +230,6 @@ function runAction(action) {
   open.value = false
 }
 
-function endConversation() {
-  open.value = false
-  draft.value = ''
-  messages.value = []
-}
-
 // 답변 데이터에 들어 있는 줄바꿈과 <br> 태그만 허용한다.
 // 다른 HTML은 이스케이프해 답변 문자열이 마크업으로 실행되지 않게 한다.
 function formatAnswer(text) {
@@ -314,14 +303,6 @@ function formatAnswer(text) {
               </div>
             </div>
 
-            <button
-              v-if="conversationComplete"
-              type="button"
-              class="chat-end-btn"
-              @click="endConversation"
-            >
-              대화 끝내기
-            </button>
           </div>
         </div>
 
@@ -487,7 +468,7 @@ function formatAnswer(text) {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding: 64px 72px 16px 40px;
+  padding: 64px 72px 16px;
 }
 
 .chat-empty {
@@ -502,15 +483,20 @@ function formatAnswer(text) {
 
 .chat-empty h3 {
   margin: 0;
-  color: #9aa3b5;
-  font-size: clamp(20px, 2.4vw, 26px);
-  font-weight: 700;
+  color: #9e9e9e;
+  font-size: var(--type-title-01);
+  font-weight: var(--type-weight-semibold);
+  line-height: var(--type-line-height);
+  letter-spacing: var(--type-letter-spacing);
 }
 
 .chat-empty p {
   margin: 0;
-  color: #9aa3b5;
-  font-size: 14px;
+  color: #9e9e9e;
+  font-size: var(--type-caption);
+  font-weight: var(--type-weight-regular);
+  line-height: var(--type-line-height);
+  letter-spacing: var(--type-letter-spacing);
 }
 
 .chat-suggestions {
@@ -526,12 +512,17 @@ function formatAnswer(text) {
   border-radius: 999px;
   border: 1px solid #e2e4ea;
   background: #fff;
-  color: #9aa3b5;
-  font-size: 14px;
-  font-weight: 500;
+  color: #a6a6a6;
+  font-size: var(--type-caption);
+  font-weight: var(--type-weight-regular);
+  line-height: var(--type-line-height);
+  letter-spacing: var(--type-letter-spacing);
 }
 
 .chat-messages {
+  width: 100%;
+  max-width: 676px;
+  margin: 0 auto;
   display: flex;
   flex-direction: column;
   gap: 20px;
@@ -539,8 +530,10 @@ function formatAnswer(text) {
 
 .chat-msg p {
   margin: 0;
-  font-size: 15px;
-  line-height: 1.7;
+  font-size: var(--type-body-01);
+  font-weight: var(--type-weight-medium);
+  line-height: var(--type-line-height);
+  letter-spacing: var(--type-letter-spacing);
   white-space: pre-line;
 }
 
@@ -549,7 +542,7 @@ function formatAnswer(text) {
 }
 
 .chat-msg.user p {
-  color: #1a2233;
+  color: #666666;
   font-weight: 500;
 }
 
@@ -558,7 +551,7 @@ function formatAnswer(text) {
 }
 
 .chat-answer p {
-  color: #4a5468;
+  color: #0d0d0d;
 }
 
 /* SC-10~13 거절 카드: 일반 답변과 시각적으로 구분되는 중립 톤 배경. 아이콘은 넣지 않는다. */
@@ -584,23 +577,6 @@ function formatAnswer(text) {
 
 .chat-action-btn:hover {
   background: #dfeaff;
-}
-
-.chat-end-btn {
-  align-self: center;
-  margin-top: 2px;
-  padding: 7px 13px;
-  border: 1px solid #cfd3da;
-  border-radius: 999px;
-  background: #fff;
-  color: #9aa3b5;
-  font-size: 12px;
-  cursor: pointer;
-}
-
-.chat-end-btn:hover {
-  border-color: #9aa3b5;
-  color: #687386;
 }
 
 .chat-typing {
@@ -653,7 +629,10 @@ function formatAnswer(text) {
   flex: 1;
   border: none;
   background: transparent;
-  font-size: 15px;
+  font-size: var(--type-body-01);
+  font-weight: var(--type-weight-semibold);
+  line-height: var(--type-line-height);
+  letter-spacing: var(--type-letter-spacing);
   color: #1a2233;
   outline: none;
 }
@@ -714,7 +693,7 @@ function formatAnswer(text) {
 
 @media (max-width: 560px) {
   .chat-body {
-    padding: 64px 56px 16px 24px;
+    padding: 64px 24px 16px;
   }
 
   .chat-anchor {
