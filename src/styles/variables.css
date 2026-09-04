@@ -55,6 +55,23 @@
   --font-size-sm: 12px;
   --font-size-md: 14px;
   --font-size-lg: 16px;
+  --type-line-height: 1.4;
+  --type-letter-spacing: -0.03em;
+  --type-weight-regular: 400;
+  --type-weight-medium: 500;
+  --type-weight-semibold: 600;
+  --type-display-01: 48px;
+  --type-display-02: 32px;
+  --type-subdisplay-01: 18px;
+  --type-subdisplay-02: 16px;
+  --type-title-01: 28px;
+  --type-title-02: 24px;
+  --type-heading-01: 20px;
+  --type-heading-02: 18px;
+  --type-body-01: 15px;
+  --type-caption: 14px;
+  --type-label-large: 32px;
+  --type-label-medium: 16px;
 
   /* Z-index */
   --z-base: 0;
