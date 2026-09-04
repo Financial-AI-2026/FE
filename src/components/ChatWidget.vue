@@ -32,6 +32,7 @@ const draft = ref('')
 const messages = ref([])
 const bodyRef = ref(null)
 const showHint = ref(false)
+const isBodyScrolled = ref(false)
 let hintTimer = null
 
 // SC-01 용어 설명 — 정확히 일치하는 질문에 대한 사전 정의.
@@ -171,7 +172,12 @@ function resolveIntent(raw, stage) {
 function toggle() {
   if (props.disabled) return
   open.value = !open.value
-  if (open.value) showHint.value = false
+  if (open.value) {
+    showHint.value = false
+    scrollToBottom()
+  } else {
+    isBodyScrolled.value = false
+  }
 }
 
 function pingHint() {
@@ -195,8 +201,15 @@ onUnmounted(() => {
 
 function scrollToBottom() {
   nextTick(() => {
-    if (bodyRef.value) bodyRef.value.scrollTop = bodyRef.value.scrollHeight
+    if (bodyRef.value) {
+      bodyRef.value.scrollTop = bodyRef.value.scrollHeight
+      updateScrollFade()
+    }
   })
+}
+
+function updateScrollFade() {
+  isBodyScrolled.value = (bodyRef.value?.scrollTop ?? 0) > 12
 }
 
 function send(text) {
@@ -263,7 +276,13 @@ function formatAnswer(text) {
 
     <Transition name="chat-fade">
       <div v-if="open" class="chat-overlay" @click.self="toggle">
-        <div class="chat-panel" :class="{ 'has-messages': messages.length > 0 }">
+        <div
+          class="chat-panel"
+          :class="{
+            'has-conversation': messages.length > 0,
+            'is-scrolled': isBodyScrolled,
+          }"
+        >
 
         <button type="button" class="chat-close" aria-label="닫기" @click="toggle">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -272,7 +291,7 @@ function formatAnswer(text) {
           </svg>
         </button>
 
-        <div ref="bodyRef" class="chat-body">
+        <div ref="bodyRef" class="chat-body" @scroll="updateScrollFade">
           <div v-if="messages.length === 0" class="chat-empty">
             <h3>저에게 무엇이든 물어보세요!</h3>
             <p>어려운 용어와 상품 구조를 쉽게 풀어드려요</p>
@@ -417,7 +436,11 @@ function formatAnswer(text) {
   overflow: hidden;
 }
 
-.chat-panel.has-messages::before {
+.chat-panel.has-conversation .chat-body {
+  padding-bottom: 48px;
+}
+
+.chat-panel.is-scrolled::before {
   content: '';
   position: absolute;
   inset: 0 0 auto;
@@ -468,7 +491,8 @@ function formatAnswer(text) {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding: 64px 72px 16px;
+  /* 왼쪽은 입력 텍스트 시작점, 오른쪽은 입력창 끝선에서 12px 간격이다. */
+  padding: 64px 36px 16px 46px;
 }
 
 .chat-empty {
@@ -521,11 +545,15 @@ function formatAnswer(text) {
 
 .chat-messages {
   width: 100%;
-  max-width: 676px;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 32px;
+}
+
+/* 한 답변이 끝난 뒤 다음 사용자 질문이 시작되는 턴 사이는 더 넓게 구분한다. */
+.chat-msg.ai + .chat-msg.user {
+  margin-top: 16px;
 }
 
 .chat-msg p {
@@ -693,7 +721,8 @@ function formatAnswer(text) {
 
 @media (max-width: 560px) {
   .chat-body {
-    padding: 64px 24px 16px;
+    /* 모바일에서도 입력창 끝선과 사용자 질문 사이를 12px로 유지한다. */
+    padding: 64px 28px 16px 38px;
   }
 
   .chat-anchor {
