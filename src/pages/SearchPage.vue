@@ -1,19 +1,21 @@
 <script setup>
 import { ref } from "vue";
+import { useRouter } from "vue-router";
 import ProductCard from "../components/ProductCard.vue";
 import BaseBadge from "../components/base/BaseBadge.vue";
 import BrandLogo from "../components/base/BrandLogo.vue";
 
-const emit = defineEmits(["back", "open"]);
+const router = useRouter();
 
 const query = ref("");
 
+// 디자인 데모용 목업 — 실제 검색 API 연동은 아직 붙이지 않음.
 const results = [
-  { brand: "kodex" },
-  { brand: "kodex" },
-  { brand: "kodex" },
-  { brand: "globalx" },
-  { brand: "kodex", disabled: true },
+  { code: "069500", brand: "kodex" },
+  { code: "091160", brand: "kodex" },
+  { code: "371460", brand: "kodex" },
+  { code: "GLOBALX01", brand: "globalx" },
+  { code: "133690", brand: "kodex", disabled: true },
 ];
 
 const analyzedOnly = ref(false);
@@ -22,7 +24,7 @@ const analyzedOnly = ref(false);
 <template>
   <div class="search-page">
     <header class="top-bar">
-      <button type="button" class="back-btn" @click="emit('back')">
+      <button type="button" class="back-btn" @click="router.back()">
         <svg
           viewBox="0 0 24 24"
           fill="none"
@@ -94,7 +96,7 @@ const analyzedOnly = ref(false);
         :key="i"
         :brand="r.brand"
         :disabled="r.disabled"
-        @open="emit('open')"
+        @open="router.push({ name: 'detail', params: { code: r.code } })"
       />
     </div>
   </div>
@@ -105,16 +107,20 @@ const analyzedOnly = ref(false);
   position: relative;
   min-height: 100svh;
   box-sizing: border-box;
-  padding: clamp(24px, 2.4vw, 40px) clamp(28px, 5vw, 80px) 60px;
+  padding: 0 48px 72px;
   background: linear-gradient(
     180deg,
-    var(--color-bg-page-deep) 0%,
-    var(--color-bg-page-mid) 40%,
-    var(--color-bg-page) 100%
+    #09101a 0%,
+    #2f4c76 100%
   );
 }
 
 .top-bar {
+  position: absolute;
+  top: 21px;
+  left: 59px;
+  right: 48px;
+  z-index: 10;
   display: flex;
   align-items: center;
   gap: 14px;
@@ -146,24 +152,29 @@ const analyzedOnly = ref(false);
 }
 
 h1 {
-  margin: clamp(28px, 4vw, 56px) 0 clamp(20px, 2.2vw, 32px);
+  margin: 0 0 40px;
+  padding-top: 160px;
   text-align: center;
-  font-size: clamp(24px, 2.6vw, 38px);
-  font-weight: 700;
+  font-size: 32px;
+  font-weight: 600;
   color: #fff;
+  line-height: 1.4;
+  letter-spacing: -0.96px;
 }
 
 .search-bar {
-  max-width: 1040px;
+  width: min(100%, 491px);
+  min-height: 52px;
   margin: 0 auto;
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: clamp(6px, 0.6vw, 10px) clamp(8px, 0.8vw, 12px)
-    clamp(6px, 0.6vw, 10px) clamp(18px, 1.6vw, 26px);
-  border-radius: 16px;
-  background: #0f1a2e;
-  border: 1px solid var(--color-border-subtle-strong);
+  box-sizing: border-box;
+  padding: 16px 20px;
+  border-radius: 999px;
+  background: #1d2e49;
+  border: 0;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.25);
 }
 
 .search-bar input {
@@ -171,7 +182,10 @@ h1 {
   border: none;
   background: transparent;
   color: #fff;
-  font-size: clamp(14px, 1.1vw, 18px);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.4;
+  letter-spacing: -0.42px;
   outline: none;
 }
 
@@ -180,12 +194,12 @@ h1 {
 }
 
 .search-btn {
-  width: clamp(34px, 3vw, 46px);
-  height: clamp(34px, 3vw, 46px);
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
   border: none;
-  background: #1d2c48;
-  color: #cfd8ea;
+  background: transparent;
+  color: #83a8e9;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -194,23 +208,27 @@ h1 {
 }
 
 .search-btn svg {
-  width: 44%;
-  height: 44%;
+  width: 16.25px;
+  height: 16.25px;
 }
 
 .result-bar {
-  max-width: 1040px;
-  margin: clamp(20px, 2vw, 30px) auto 16px;
+  width: auto;
+  margin: 56px -48px 25px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding-bottom: 14px;
-  border-bottom: 1px solid var(--color-border-subtle-strong);
+  padding: 25px max(48px, calc((100% - 1066px) / 2)) 0;
+  border-top: 4px solid #1d2e49;
+  border-bottom: 0;
 }
 
 .count {
-  font-size: clamp(13px, 1vw, 16px);
-  color: #8891a6;
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 1.4;
+  letter-spacing: -0.72px;
+  color: #f2f2f2;
 }
 
 .toggle {
@@ -219,8 +237,11 @@ h1 {
   gap: 6px;
   border: none;
   background: transparent;
-  color: var(--color-fg-muted);
-  font-size: clamp(12px, 0.9vw, 15px);
+  color: #e6e6e6;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.4;
+  letter-spacing: -0.42px;
   cursor: pointer;
   transition: color 0.2s ease;
 }
@@ -235,11 +256,11 @@ h1 {
 }
 
 .results {
-  max-width: 1040px;
+  max-width: 1066px;
   margin: 0 auto;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: clamp(16px, 1.6vw, 28px);
+  gap: 32px;
 }
 
 @media (max-width: 700px) {
@@ -247,8 +268,18 @@ h1 {
     padding: 20px 20px 48px;
   }
 
+  h1 {
+    margin-top: 64px;
+    font-size: 26px;
+  }
+
+  .search-bar {
+    max-width: 100%;
+  }
+
   .results {
     grid-template-columns: repeat(2, 1fr);
+    gap: 18px;
   }
 }
 

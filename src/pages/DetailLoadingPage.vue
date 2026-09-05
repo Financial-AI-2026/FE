@@ -1,15 +1,17 @@
 <script setup>
 import { onMounted } from "vue";
+import { useRouter } from "vue-router";
 import BaseBadge from "../components/base/BaseBadge.vue";
 import BrandLogo from "../components/base/BrandLogo.vue";
 import ChatWidget from "../components/ChatWidget.vue";
 import docSearchIcon from "../assets/icons/loading-doc-search.png";
 
-const emit = defineEmits(["done"]);
+const props = defineProps({ code: { type: String, default: "" } });
+const router = useRouter();
 
 onMounted(() => {
   setTimeout(() => {
-    emit("done");
+    router.push({ name: "result", params: { code: props.code } });
   }, 1800);
 });
 </script>
