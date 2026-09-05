@@ -3,7 +3,7 @@ import { ref } from "vue";
 import { useRouter } from "vue-router";
 import ProductCard from "../components/ProductCard.vue";
 import BaseBadge from "../components/base/BaseBadge.vue";
-import BrandLogo from "../components/base/BrandLogo.vue";
+import PageHeader from "../components/base/PageHeader.vue";
 import { useSessionStore } from "../stores/session";
 
 const router = useRouter();
@@ -25,15 +25,13 @@ const analyzedOnly = ref(false);
 
 <template>
   <div class="search-page">
-    <header class="top-bar">
-      <BrandLogo />
-
+    <PageHeader>
       <div class="badges">
         <BaseBadge v-for="label in session.profileBadges" :key="label" tone="gold">
           {{ label }}
         </BaseBadge>
       </div>
-    </header>
+    </PageHeader>
 
     <h1>찾고 싶은 금융 상품을 검색해보세요!</h1>
 
@@ -103,17 +101,6 @@ const analyzedOnly = ref(false);
     #09101a 0%,
     #2f4c76 100%
   );
-}
-
-.top-bar {
-  position: absolute;
-  top: 21px;
-  left: 59px;
-  right: 48px;
-  z-index: 10;
-  display: flex;
-  align-items: center;
-  gap: 14px;
 }
 
 .badges {

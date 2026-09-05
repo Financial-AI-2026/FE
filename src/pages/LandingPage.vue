@@ -6,7 +6,7 @@ import iconTarget from "../assets/icons/target.png";
 import earthImg from "../assets/images/earth.png";
 import { useRouter } from "vue-router";
 import BaseBadge from "../components/base/BaseBadge.vue";
-import BrandLogo from "../components/base/BrandLogo.vue";
+import PageHeader from "../components/base/PageHeader.vue";
 
 const router = useRouter();
 
@@ -87,14 +87,12 @@ const stars = Array.from({ length: 34 }, () => ({
       </div>
 
       <!-- 상단 -->
-      <header class="top-bar">
-        <BrandLogo />
-
+      <PageHeader>
         <div class="badges">
           <BaseBadge tone="purple">로그인 불필요</BaseBadge>
           <BaseBadge tone="purple">개인정보 미수집</BaseBadge>
         </div>
-      </header>
+      </PageHeader>
 
       <!-- HERO CONTENT -->
       <div class="hero-content">
@@ -246,7 +244,7 @@ const stars = Array.from({ length: 34 }, () => ({
 
   pointer-events: none;
 
-  transform: translate(-50%, -76%);
+  transform: translate(-50%, -81%);
 }
 
 /* 지구 본체 */
@@ -315,19 +313,6 @@ const stars = Array.from({ length: 34 }, () => ({
 /* ==================================================
    TOP BAR
 ================================================== */
-
-.top-bar {
-  position: relative;
-
-  z-index: 4;
-
-  width: 100%;
-
-  display: flex;
-
-  align-items: center;
-  justify-content: space-between;
-}
 
 .badges {
   display: flex;

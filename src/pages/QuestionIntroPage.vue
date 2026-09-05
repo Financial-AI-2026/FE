@@ -2,7 +2,7 @@
 import { ref, reactive, computed } from "vue";
 import { useRouter } from "vue-router";
 import searchDocumentIcon from "../assets/icons/icon-note-document.png";
-import BrandLogo from "../components/base/BrandLogo.vue";
+import PageHeader from "../components/base/PageHeader.vue";
 import { useSessionStore } from "../stores/session";
 
 const router = useRouter();
@@ -84,13 +84,11 @@ function prev() {
     <!-- =========================
          TOP BAR
     ========================== -->
-    <header class="top-bar">
-      <BrandLogo />
-
+    <PageHeader>
       <div v-if="started" class="progress-track">
         <div class="progress-fill" :style="{ width: progressPct + '%' }" />
       </div>
-    </header>
+    </PageHeader>
 
     <!-- =========================
          저장 안내 문구
@@ -221,21 +219,6 @@ function prev() {
 /* =================================================
    TOP BAR
 ================================================= */
-
-.top-bar {
-  position: absolute;
-
-  z-index: 20;
-
-  top: 21px;
-  left: 59px;
-  right: 48px;
-
-  display: flex;
-  align-items: center;
-
-  height: 39px;
-}
 
 /* =================================================
    PROGRESS
@@ -883,7 +866,7 @@ function prev() {
     overflow-y: auto;
   }
 
-  .top-bar {
+  :deep(.page-header) {
     left: 24px;
     right: 24px;
   }
@@ -976,7 +959,7 @@ function prev() {
     padding-bottom: 50px;
   }
 
-  .top-bar {
+  :deep(.page-header) {
     top: 18px;
 
     left: 20px;

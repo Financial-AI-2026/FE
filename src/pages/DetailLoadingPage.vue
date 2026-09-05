@@ -2,7 +2,7 @@
 import { onMounted } from "vue";
 import { useRouter } from "vue-router";
 import BaseBadge from "../components/base/BaseBadge.vue";
-import BrandLogo from "../components/base/BrandLogo.vue";
+import PageHeader from "../components/base/PageHeader.vue";
 import ChatWidget from "../components/ChatWidget.vue";
 import docSearchIcon from "../assets/icons/loading-doc-search.png";
 import { useSessionStore } from "../stores/session";
@@ -20,14 +20,13 @@ onMounted(() => {
 
 <template>
   <div class="loading-page">
-    <header class="top-bar">
-      <BrandLogo />
+    <PageHeader>
       <div class="badges">
         <BaseBadge v-for="label in session.profileBadges" :key="label" tone="gold">
           {{ label }}
         </BaseBadge>
       </div>
-    </header>
+    </PageHeader>
 
     <div class="content">
       <h1>TIGER 미국S&amp;P500레버리지(합성 H)</h1>
@@ -45,6 +44,7 @@ onMounted(() => {
 
 <style scoped>
 .loading-page {
+  position: relative;
   min-height: 100svh;
   box-sizing: border-box;
   padding: clamp(24px, 2.4vw, 40px) clamp(28px, 5vw, 80px) 60px;
@@ -56,12 +56,6 @@ onMounted(() => {
     var(--color-bg-page-mid) 45%,
     var(--color-bg-page) 100%
   );
-}
-
-.top-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
 }
 
 .badges {

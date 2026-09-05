@@ -4,7 +4,7 @@ import { useRouter } from "vue-router";
 import ProductCard from "../components/ProductCard.vue";
 import BaseBadge from "../components/base/BaseBadge.vue";
 import ChatWidget from "../components/ChatWidget.vue";
-import BrandLogo from "../components/base/BrandLogo.vue";
+import PageHeader from "../components/base/PageHeader.vue";
 import DiagnosticWidget from "../components/DiagnosticWidget.vue";
 import { useSessionStore } from "../stores/session";
 
@@ -80,15 +80,13 @@ onUnmounted(() => {
 
 <template>
   <div class="result-page">
-    <header class="top-bar">
-      <BrandLogo />
-
+    <PageHeader>
       <div class="badges">
         <BaseBadge v-for="label in session.profileBadges" :key="label" tone="gold">
           {{ label }}
         </BaseBadge>
       </div>
-    </header>
+    </PageHeader>
 
     <button type="button" class="back-btn" @click="router.back()">
       <svg
@@ -200,6 +198,7 @@ onUnmounted(() => {
 
 <style scoped>
 .result-page {
+  position: relative;
   min-height: 100svh;
   box-sizing: border-box;
   padding: clamp(24px, 2.4vw, 40px) clamp(28px, 5vw, 80px) 60px;
@@ -211,11 +210,6 @@ onUnmounted(() => {
   );
 }
 
-.top-bar {
-  display: flex;
-  align-items: center;
-}
-
 .badges {
   margin-left: auto;
   display: flex;
@@ -223,7 +217,7 @@ onUnmounted(() => {
 }
 
 .back-btn {
-  margin-top: 18px;
+  margin-top: 50px;
   width: 32px;
   height: 32px;
   border-radius: 50%;

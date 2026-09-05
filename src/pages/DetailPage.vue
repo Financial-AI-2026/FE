@@ -3,7 +3,7 @@ import { ref, reactive, onMounted, onUnmounted } from "vue";
 import { useRouter } from "vue-router";
 import ProductCard from "../components/ProductCard.vue";
 import BaseBadge from "../components/base/BaseBadge.vue";
-import BrandLogo from "../components/base/BrandLogo.vue";
+import PageHeader from "../components/base/PageHeader.vue";
 import ChatWidget from "../components/ChatWidget.vue";
 import magnifierIcon from "../assets/icons/icon-search.png";
 import warningIcon from "../assets/icons/warning-triangle.svg";
@@ -214,15 +214,13 @@ function openEtf(code) {
       />
     </div>
 
-    <header class="top-bar">
-      <BrandLogo />
-
+    <PageHeader>
       <div class="badges">
         <BaseBadge v-for="label in session.profileBadges" :key="label" tone="gold">
           {{ label }}
         </BaseBadge>
       </div>
-    </header>
+    </PageHeader>
 
     <button type="button" class="back-btn" @click="router.back()">
       <svg
@@ -410,13 +408,6 @@ function openEtf(code) {
   background: linear-gradient(180deg, #09101a 0%, #2f4c76 100%);
 }
 
-.top-bar {
-  position: relative;
-  z-index: 5;
-  display: flex;
-  align-items: center;
-}
-
 .badges {
   margin-left: auto;
   display: flex;
@@ -458,7 +449,9 @@ section {
 
 .hero-section {
   text-align: center;
-  padding-top: 126px;
+  /* 헤더가 absolute로 빠지면서 사라진 문서 흐름상의 높이(약 32px)를
+     보정 — 헤더 도입 전과 같은 시각적 여백을 유지한다. */
+  padding-top: 158px;
 }
 
 .hero-section h1 {
