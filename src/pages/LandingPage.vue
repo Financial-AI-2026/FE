@@ -105,11 +105,7 @@ const stars = Array.from({ length: 34 }, () => ({
           모든 ETF의 투자설명서를 대신 읽고, 당신 기준으로 위험을 알려드려요
         </p>
 
-        <button
-          class="cta"
-          type="button"
-          @click="router.push({ name: 'questions' })"
-        >
+        <button class="cta" type="button" @click="router.push({ name: 'questions' })">
           ETF 진단하러 가기
         </button>
       </div>

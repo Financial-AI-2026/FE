@@ -1,5 +1,5 @@
 <script setup>
-import { ref, reactive, onMounted, onUnmounted } from "vue";
+import { ref, reactive, computed, watch, onMounted, onUnmounted } from "vue";
 import { useRouter } from "vue-router";
 import ProductCard from "../components/ProductCard.vue";
 import BaseBadge from "../components/base/BaseBadge.vue";
@@ -8,53 +8,103 @@ import ChatWidget from "../components/ChatWidget.vue";
 import magnifierIcon from "../assets/icons/icon-search.png";
 import warningIcon from "../assets/icons/warning-triangle.svg";
 import tigerLogo from "../assets/icons/tiger.png";
+import globalxLogo from "../assets/icons/globalx.png";
+import prosharesLogo from "../assets/icons/proshares.png";
+import { fetchEtfDetail, fetchEtfs, fetchEtfsByCodes, ApiError } from "../api/client";
 import { useSessionStore } from "../stores/session";
 
-// 디자인 데모용 목업 — 실제 상품 조회/진단 API 연동은 아직 붙이지 않음
-// (백엔드 서빙 준비 전까지 의도적으로 미연동, code는 라우팅에만 사용).
 const props = defineProps({ code: { type: String, required: true } });
 
 const router = useRouter();
 const session = useSessionStore();
 
-const loading = ref(false);
-const errorMessage = ref(null);
-
-const etf = {
-  code: props.code,
-  market: "KR",
-  hiddenInsight: {
-    summary: "레버리지, 항상 2배는 아니에요",
-    body: "하루 수익률 기준으로만 2배를 따라가요.",
-  },
-  evidence: [
-    {
-      quote:
-        "본 투자신탁은 기초지수의 일별수익률의 2배수의 수익률을 추적하는 것을 기본 투자목적으로 하고 있습니다. 이때 하루가 아닌 2영업일 이상의 투자기간에 걸쳐 실현되는 실제 누적수익률은 동 기간 내 기초지수의 누적수익률의 정확히 2배 수익률과 크게 괴리되거나 반대 방향을 나타낼 수 있습니다.",
-    },
-  ],
+// 로고가 확실한 MVP 8종만 (검색 확장 이후 나머지 수천 종은 매핑 정보가
+// 없다 — ProductCard와 동일하게 로고 없는 기본 배너로 대체).
+const HERO_LOGO_BY_CODE = {
+  "102110": tigerLogo,
+  "133690": tigerLogo,
+  "418660": tigerLogo,
+  "435420": tigerLogo,
+  "441680": tigerLogo,
+  "448290": tigerLogo,
+  QYLD: globalxLogo,
+  TQQQ: prosharesLogo,
 };
 
-const productName = "TIGER 미국S&P500레버리지(합성 H)";
-const heroLogo = tigerLogo;
+const etf = ref(null);
+const loading = ref(true);
+const errorMessage = ref(null);
 
-// "다른 ETF 상품도 살펴보세요" — 디자인 데모용 목업, 고정 8개.
-const recommended = [
-  { code: "069500", name: "KODEX 200", manager: "삼성자산운용", ready: true },
-  { code: "091160", name: "KODEX 반도체", manager: "삼성자산운용", ready: true },
-  { code: "371460", name: "TIGER 차이나전기차SOLACTIVE", manager: "미래에셋자산운용", ready: true },
-  { code: "GLOBALX01", name: "Global X Robotics & AI ETF", manager: "Global X", ready: true },
-  { code: "195930", name: "KODEX 미국S&P500TR", manager: "삼성자산운용", ready: true },
-  { code: "GLOBALX02", name: "Global X SuperDividend ETF", manager: "Global X", ready: false },
-  { code: "310970", name: "KODEX 200TR", manager: "삼성자산운용", ready: true },
-  { code: "133690", name: "TIGER 미국나스닥100", manager: "미래에셋자산운용", ready: true },
-];
+const recommended = ref([]); // "다른 ETF 상품도 살펴보세요" — 고정순, 현재 종목 제외
+
+async function loadEtf(code) {
+  loading.value = true;
+  errorMessage.value = null;
+  try {
+    etf.value = await fetchEtfDetail(code);
+    session.setCurrentCode(code);
+  } catch (err) {
+    etf.value = null;
+    errorMessage.value =
+      err instanceof ApiError && err.status === 404
+        ? "아직 분석이 끝나지 않은 상품이에요."
+        : "상품 정보를 불러오지 못했습니다.";
+  } finally {
+    loading.value = false;
+  }
+}
+
+async function loadRecommended(excludeCode) {
+  try {
+    // 이전에 조회했던(클릭해서 들어가본) 종목을 앞에 두고, 모자란 자리는 고정
+    // 8종으로 채운다 — 조회 이력이 1~2개뿐일 때 목록이 확 줄어들지 않게.
+    const viewedCodes = session.viewedCodes.filter((code) => code !== excludeCode);
+    const [viewedItems, response] = await Promise.all([
+      viewedCodes.length > 0 ? fetchEtfsByCodes(viewedCodes) : Promise.resolve([]),
+      fetchEtfs(),
+    ]);
+    const fallbackItems = [...(response?.domestic ?? []), ...(response?.overseas ?? [])]
+      .filter((item) => item.displayOrder != null && item.code !== excludeCode)
+      .sort((a, b) => a.displayOrder - b.displayOrder);
+
+    const seen = new Set();
+    const merged = [];
+    for (const item of [...viewedItems, ...fallbackItems]) {
+      if (seen.has(item.code)) continue;
+      seen.add(item.code);
+      merged.push(item);
+    }
+    recommended.value = merged;
+  } catch {
+    recommended.value = [];
+  }
+}
+
+watch(
+  () => props.code,
+  (code) => {
+    if (code) {
+      loadEtf(code);
+      loadRecommended(code);
+    }
+  },
+  { immediate: true },
+);
+
+const productName = computed(() => etf.value?.name ?? "");
+const heroLogo = computed(() => HERO_LOGO_BY_CODE[props.code] ?? null);
 
 const showUnderstandModal = ref(false);
 const chatWidgetRef = ref(null);
 
-// S4(이름 해독) 단계 추천 칩.
-const chatSuggestions = ["레버리지가 뭐예요?", "합성은 무슨 뜻이에요?", "환헤지가 뭔가요?"];
+// S4(이름 해독) 단계 추천 칩 — 실제 이 상품의 이름 토큰에서 뽑는다
+// (문구는 창작하지 않는다: 토큰 원문 그대로 "~가 뭐예요?" 템플릿에만 끼운다).
+const chatSuggestions = computed(() => {
+  const texts = (etf.value?.tokens ?? [])
+    .map((token) => token.text)
+    .filter((text) => Boolean(text) && text.length <= 8);
+  return texts.slice(0, 3).map((text) => `${text}가 뭐예요?`);
+});
 
 const scrollbar = reactive({ heightPct: 100, topPct: 0 });
 
@@ -105,81 +155,47 @@ onUnmounted(() => {
   window.removeEventListener("resize", updateScrollbar);
 });
 
-// 이름 토큰 분해 — 디자인 데모용 목업.
-const terms = [
-  {
-    label: "TIGER",
-    phrase: "미래에셋이 만든",
-    detail:
-      "TIGER는 미래에셋자산운용의 ETF 브랜드예요. 어떤 회사가 이 상품을 만들고 운용하는지 알려주는 부분이에요.",
-  },
-  {
-    label: "미국S&P500",
-    phrase: "미국 큰 회사 500개를",
-    detail:
-      "미국을 대표하는 500개 대기업의 주가로 만든 지수예요. 이 지수를 그대로 따라가도록 설계됐어요.",
-  },
-  {
-    label: "레버리지",
-    phrase: "2배로 따라가는데",
-    detail: "기초지수가 하루 동안 오르내리는 만큼의 2배로 움직이도록 설계된 상품이에요.",
-  },
-  {
-    label: "합성",
-    phrase: "실제 주식은 사지 않고",
-    detail:
-      "실제 주식을 직접 사는 대신, 증권사와 계약(스왑)을 맺어 수익률만 그대로 받아오는 방식이에요.",
-  },
-  {
-    label: "H",
-    phrase: "환율 걱정은 없는 상품",
-    detail: "환헤지(Hedge)가 적용돼 있어서, 환율이 오르내려도 수익률에 영향을 주지 않아요.",
-  },
-];
+// 이름 토큰 분해 — API `tokens`를 그대로 쓴다. `label`은 원문(없으면 "absent"
+// 마커), `phrase`/`detail`은 둘 다 같은 실제 번역문(`translation`)을 쓴다 —
+// API가 짧은 설명 한 줄만 주기 때문에, 없는 문구를 새로 짓는 대신 그 한 줄을
+// 두 자리에 그대로 재사용한다 (문구는 창작하지 않는다는 원칙).
+const terms = computed(() =>
+  (etf.value?.tokens ?? []).map((token) => ({
+    label: token.text ?? (token.absent ? `(${token.absent} 없음)` : `#${token.seq}`),
+    phrase: token.translation,
+    detail: token.translation,
+  })),
+);
 
 const activeTerm = ref(0);
+watch(terms, () => {
+  activeTerm.value = 0;
+});
 
-// 구조 Q&A — 디자인 데모용 목업.
-const qa = [
-  {
-    q: "어떤 지수를 따라가나요?",
-    a: "S&P500 따라가요",
-    tag: "기초지수",
-    sub: "S&P500은 미국의 500개 회사를 말해요",
-  },
-  {
-    q: "몇 배로 움직이나요?",
-    a: "2배로 움직여요",
-    tag: "레버리지 배율",
-    sub: "단, 하루 단위로 2배를 계산해요.",
-  },
-  {
-    q: "주식을 직접 사는건가요?",
-    a: "아니요! 증권사와 계약만 맺어요",
-    tag: "복제방식",
-    sub: "S&P500은 미국의 500개 회사를 말해요",
-  },
-  {
-    q: "돈을 나눠주나요?",
-    a: "아니요 다시 굴려요",
-    tag: "분배 정책",
-    sub: "S&P500은 미국의 500개 회사를 말해요",
-  },
-  {
-    q: "환율에 영향은 받나요?",
-    a: "없어요. 막아두는 장치가 있어요",
-    tag: "환헤지 여부",
-    sub: "S&P500은 미국의 500개 회사를 말해요",
-  },
-  {
-    q: "수수료는 얼마 인가요?",
-    a: "1년에 0.25%예요",
-    tag: "총보수",
-    sub: "100만원당 2,500원이에요",
-  },
+// 구조 Q&A — API `structure`(label/question/value/sub)를 그대로 옮긴다.
+// `sub`는 API가 실제로 계산·용어 정의해서 내려주는 값 — 없으면(예: 배율
+// 1배는 sub 없음) 템플릿에서 그 줄 자체를 숨긴다.
+const STRUCTURE_ORDER = [
+  "baseIndex",
+  "leverage",
+  "replication",
+  "distribution",
+  "fxHedge",
+  "totalExpense",
 ];
+const qa = computed(() => {
+  const structure = etf.value?.structure ?? {};
+  return STRUCTURE_ORDER.filter((key) => structure[key]).map((key) => ({
+    q: structure[key].question,
+    a: structure[key].value,
+    tag: structure[key].label,
+    sub: structure[key].sub ?? "",
+  }));
+});
 
-const hiddenInsightEvidence = etf.evidence[0];
+// "이건 꼭 알고 투자해야해요" 카드 — hiddenInsight가 없는 상품(현재 MVP 8종
+// 전부)에서는 그 카드만 숨기고, 진단으로 넘어가는 CTA는 항상 노출한다.
+const hiddenInsightEvidence = computed(() => etf.value?.evidence?.[0] ?? null);
 
 const BRAND_BY_MANAGER_KEYWORD = [
   ["미래에셋", "tiger"],
