@@ -4,10 +4,11 @@ import iconSearch from "../assets/icons/icon-search.png";
 import iconDocument from "../assets/icons/icon-document.png";
 import iconTarget from "../assets/icons/target.png";
 import earthImg from "../assets/images/earth.png";
+import { useRouter } from "vue-router";
 import BaseBadge from "../components/base/BaseBadge.vue";
-import BrandLogo from "../components/base/BrandLogo.vue";
+import PageHeader from "../components/base/PageHeader.vue";
 
-const emit = defineEmits(["start"]);
+const router = useRouter();
 
 const iconMap = {
   check: iconCheck,
@@ -59,7 +60,7 @@ const stars = Array.from({ length: 34 }, () => ({
     ========================== -->
     <section class="hero">
       <!-- 별 -->
-      <div class="stars">
+      <!-- <div class="stars">
         <span
           v-for="(s, i) in stars"
           :key="i"
@@ -73,7 +74,7 @@ const stars = Array.from({ length: 34 }, () => ({
             animationDuration: s.duration,
           }"
         />
-      </div>
+      </div> -->
 
       <!-- 지구 -->
       <div class="globe-wrap">
@@ -81,19 +82,17 @@ const stars = Array.from({ length: 34 }, () => ({
           <img :src="earthImg" class="globe-photo" alt="" />
 
           <!-- 대기 -->
-          <div class="atmosphere" />
+          <!-- <div class="atmosphere" /> -->
         </div>
       </div>
 
       <!-- 상단 -->
-      <header class="top-bar">
-        <BrandLogo />
-
+      <PageHeader>
         <div class="badges">
-          <!-- <BaseBadge tone="purple">로그인 불필요</BaseBadge>
-          <BaseBadge tone="purple">개인정보 미수집</BaseBadge> -->
+          <BaseBadge tone="purple">로그인 불필요</BaseBadge>
+          <BaseBadge tone="purple">개인정보 미수집</BaseBadge>
         </div>
-      </header>
+      </PageHeader>
 
       <!-- HERO CONTENT -->
       <div class="hero-content">
@@ -106,7 +105,11 @@ const stars = Array.from({ length: 34 }, () => ({
           모든 ETF의 투자설명서를 대신 읽고, 당신 기준으로 위험을 알려드려요
         </p>
 
-        <button class="cta" type="button" @click="emit('start')">
+        <button
+          class="cta"
+          type="button"
+          @click="router.push({ name: 'questions' })"
+        >
           ETF 진단하러 가기
         </button>
       </div>
@@ -163,16 +166,15 @@ const stars = Array.from({ length: 34 }, () => ({
   position: relative;
 
   width: 100%;
-  height: 51svh;
-
-  min-height: 430px;
+  height: 525px;
+  min-height: 525px;
 
   box-sizing: border-box;
 
   display: flex;
   flex-direction: column;
 
-  padding: 24px clamp(28px, 3vw, 52px);
+  padding: 24px 48px 0;
 
   overflow: hidden;
 
@@ -232,7 +234,9 @@ const stars = Array.from({ length: 34 }, () => ({
   top: 0;
   left: 50%;
 
-  width: clamp(620px, 61vw, 1050px);
+  /* width: clamp(760px, 72.2vw, 1040px); */
+
+  width: min(100vw, 1440px);
 
   aspect-ratio: 1 / 1;
 
@@ -240,7 +244,7 @@ const stars = Array.from({ length: 34 }, () => ({
 
   pointer-events: none;
 
-  transform: translate(-50%, -77%);
+  transform: translate(-50%, -81%);
 }
 
 /* 지구 본체 */
@@ -257,12 +261,11 @@ const stars = Array.from({ length: 34 }, () => ({
 
   background: #050914;
 
-  border: 2px solid rgba(111, 169, 255, 0.22);
+  border: 0;
 
-  box-shadow:
-    0 0 14px rgba(84, 142, 232, 0.32),
-    0 0 45px rgba(58, 113, 204, 0.24),
-    0 0 100px rgba(37, 82, 159, 0.22);
+  /* box-shadow:
+    0 0 45px rgba(58, 113, 204, 0.18),
+    0 0 120px rgba(37, 82, 159, 0.18); */
 }
 
 /* 실제 지구 사진 */
@@ -271,60 +274,45 @@ const stars = Array.from({ length: 34 }, () => ({
   position: absolute;
   inset: 0;
 
+  z-index: 2;
+
   width: 100%;
   height: 100%;
 
   object-fit: cover;
 
-  /* 원 안에서 중심축 기준으로 천천히 자전 */
-  transform-origin: center;
-  animation: globe-spin 360s linear infinite;
+  transform: rotate(180deg);
 
-  filter: brightness(0.92) saturate(1.05);
-}
+  opacity: 0.2;
 
-@keyframes globe-spin {
-  from {
-    transform: rotate(0deg) scale(1.04);
-  }
-  to {
-    transform: rotate(360deg) scale(1.04);
-  }
+  filter: blur(5px);
 }
 
 /* 대기 */
 
 .atmosphere {
   position: absolute;
-  inset: 0;
+  inset: -28px;
+
+  z-index: 1;
 
   border-radius: 50%;
 
   background: radial-gradient(
-    circle at 50% 110%,
-    transparent 48%,
-    rgba(86, 144, 239, 0.12) 66%,
-    rgba(133, 180, 255, 0.22) 78%,
-    transparent 86%
+    circle at 50% 50%,
+    transparent 0%,
+    transparent 61%,
+    rgba(47, 128, 237, 0.5) 72%,
+    rgba(47, 128, 237, 0.28) 84%,
+    transparent 96%
   );
+
+  filter: blur(18px);
 }
 
 /* ==================================================
    TOP BAR
 ================================================== */
-
-.top-bar {
-  position: relative;
-
-  z-index: 4;
-
-  width: 100%;
-
-  display: flex;
-
-  align-items: center;
-  justify-content: space-between;
-}
 
 .badges {
   display: flex;
@@ -337,50 +325,48 @@ const stars = Array.from({ length: 34 }, () => ({
 ================================================== */
 
 .hero-content {
-  position: relative;
+  position: absolute;
 
   z-index: 3;
-
-  flex: 1;
 
   display: flex;
   flex-direction: column;
 
   align-items: center;
-  justify-content: center;
 
   text-align: center;
 
-  gap: 12px;
+  top: 174px;
+  left: 50%;
+  width: min(100% - 40px, 720px);
 
-  /*
-    기존보다 아래쪽으로 배치
-  */
-  transform: translateY(8%);
+  transform: translateX(-50%);
 }
 
 .hero-content h1 {
-  margin: 0;
+  margin: 0 0 14px;
 
   color: #ffffff;
 
-  font-size: clamp(25px, 2vw, 34px);
+  font-size: 48px;
 
-  font-weight: 700;
+  font-weight: 600;
 
-  line-height: 1.35;
+  line-height: 1.4;
 
-  letter-spacing: -0.7px;
+  letter-spacing: -1.44px;
 }
 
 .hero-content p {
-  margin: 0;
+  margin: 0 0 32px;
 
-  color: #aeb7ca;
+  color: #e6e6e6;
 
-  font-size: clamp(11px, 0.9vw, 15px);
+  font-size: 18px;
+  font-weight: 600;
 
-  line-height: 1.55;
+  line-height: 1.4;
+  letter-spacing: -0.54px;
 }
 
 /* ==================================================
@@ -388,20 +374,21 @@ const stars = Array.from({ length: 34 }, () => ({
 ================================================== */
 
 .cta {
-  margin-top: 6px;
-
-  padding: 12px 28px;
+  min-height: 42px;
+  padding: 10px 20px;
 
   border: 0;
 
   border-radius: 999px;
 
-  background: #3b82f6;
+  background: #0099ff;
 
   color: #ffffff;
 
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 600;
+  line-height: 1.4;
+  letter-spacing: -0.48px;
 
   cursor: pointer;
 
@@ -413,7 +400,7 @@ const stars = Array.from({ length: 34 }, () => ({
 }
 
 .cta:hover {
-  background: #2f75e8;
+  background: #0086dd;
 
   transform: translateY(-2px);
 }
@@ -436,7 +423,7 @@ const stars = Array.from({ length: 34 }, () => ({
     마지막 26px이
     카드 밑 여백
   */
-  padding: 34px clamp(42px, 5vw, 84px) 26px;
+  padding: 78px clamp(60px, 7.9vw, 114px) 76px;
 
   background: linear-gradient(180deg, #0a1728 0%, #081422 100%);
 
@@ -446,7 +433,7 @@ const stars = Array.from({ length: 34 }, () => ({
 .info-inner {
   width: 100%;
 
-  max-width: 1480px;
+  max-width: 1212px;
 
   margin: 0 auto;
 }
@@ -456,14 +443,15 @@ const stars = Array.from({ length: 34 }, () => ({
 ================================================== */
 
 .info h2 {
-  margin: 0 0 22px;
+  margin: 0 0 24px;
 
-  color: #e2e6ef;
+  color: #ffffff;
 
-  font-size: 18px;
+  font-size: 24px;
   font-weight: 600;
 
-  line-height: 1.3;
+  line-height: 1.4;
+  letter-spacing: -0.03em;
 }
 
 /* ==================================================
@@ -477,7 +465,7 @@ const stars = Array.from({ length: 34 }, () => ({
 
   grid-template-columns: repeat(4, minmax(0, 1fr));
 
-  gap: 20px;
+  gap: 36px;
 }
 
 /* ==================================================
@@ -487,24 +475,20 @@ const stars = Array.from({ length: 34 }, () => ({
 .card {
   position: relative;
 
-  /*
-    핵심:
-    이전보다 카드 자체를 크게
-  */
-  height: 230px;
+  min-height: 288px;
 
   box-sizing: border-box;
 
-  padding: 22px 22px 20px;
+  padding: 20px;
 
   display: flex;
   flex-direction: column;
 
-  background: #172946;
+  background: #1d2e49;
 
   border: 1px solid rgba(116, 153, 213, 0.14);
 
-  border-radius: 14px;
+  border-radius: 20px;
 
   transition:
     transform 0.25s ease,
@@ -515,7 +499,7 @@ const stars = Array.from({ length: 34 }, () => ({
 .card:hover {
   transform: translateY(-4px);
 
-  background: #1b2f50;
+  background: #24365a;
 
   border-color: rgba(150, 180, 230, 0.22);
 }
@@ -527,14 +511,15 @@ const stars = Array.from({ length: 34 }, () => ({
 .card .no {
   display: block;
 
-  margin-bottom: 18px;
+  margin-bottom: 32px;
 
-  color: #5d6f8e;
+  color: #0f1826;
 
-  font-size: 21px;
-  font-weight: 700;
+  font-size: 32px;
+  font-weight: 500;
 
-  line-height: 1;
+  line-height: 1.4;
+  letter-spacing: -0.96px;
 }
 
 /* ==================================================
@@ -542,14 +527,15 @@ const stars = Array.from({ length: 34 }, () => ({
 ================================================== */
 
 .card h3 {
-  margin: 0 0 8px;
+  margin: 0 0 12px;
 
-  color: #f0f3f8;
+  color: #edf1f8;
 
-  font-size: 14px;
+  font-size: 20px;
   font-weight: 600;
 
-  line-height: 1.45;
+  line-height: 1.4;
+  letter-spacing: -0.6px;
 }
 
 /* ==================================================
@@ -561,11 +547,13 @@ const stars = Array.from({ length: 34 }, () => ({
 
   flex: 1;
 
-  color: #8e9ab0;
+  color: #92abd3;
 
-  font-size: 12px;
+  font-size: 15px;
+  font-weight: 600;
 
-  line-height: 1.55;
+  line-height: 1.4;
+  letter-spacing: -0.45px;
 
   white-space: pre-line;
 }
@@ -575,15 +563,15 @@ const stars = Array.from({ length: 34 }, () => ({
 ================================================== */
 
 .card .icon {
-  width: clamp(46px, 4.2vw, 64px);
-  height: clamp(46px, 4.2vw, 64px);
+  width: clamp(46px, 4.7vw, 68px);
+  height: clamp(46px, 4.6vw, 66px);
   object-fit: contain;
 
   flex-shrink: 0;
 
   align-self: flex-start;
 
-  margin-top: 10px;
+  margin-top: 16px;
 }
 
 /* ==================================================
@@ -596,11 +584,11 @@ const stars = Array.from({ length: 34 }, () => ({
   }
 
   .hero {
-    height: 51svh;
+    height: 525px;
   }
 
   .card {
-    height: 230px;
+    min-height: 288px;
   }
 }
 
@@ -610,9 +598,9 @@ const stars = Array.from({ length: 34 }, () => ({
 
 @media (max-width: 1200px) {
   .hero {
-    height: 52svh;
-
-    min-height: 420px;
+    height: clamp(460px, 52svh, 500px);
+    min-height: 460px;
+    padding: 18px 40px 0;
   }
 
   .info {
@@ -624,7 +612,7 @@ const stars = Array.from({ length: 34 }, () => ({
   }
 
   .card {
-    height: 215px;
+    min-height: 240px;
 
     padding: 20px 18px;
   }
@@ -637,7 +625,6 @@ const stars = Array.from({ length: 34 }, () => ({
 @media (max-width: 900px) {
   .hero {
     height: 500px;
-
     min-height: 500px;
   }
 
@@ -675,16 +662,15 @@ const stars = Array.from({ length: 34 }, () => ({
     gap: 6px;
   }
 
-  .badge {
-    padding: 5px 8px;
-
-    font-size: 9px;
+  .badges :deep(.base-badge.purple) {
+    height: 28px;
+    padding: 0 10px;
+    font-size: 10px;
   }
 
   .hero-content {
-    transform: translateY(7%);
-
-    gap: 10px;
+    top: 150px;
+    width: calc(100% - 40px);
   }
 
   .hero-content h1 {
@@ -748,7 +734,7 @@ const stars = Array.from({ length: 34 }, () => ({
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .globe-photo {
+  .star {
     animation: none;
   }
 }

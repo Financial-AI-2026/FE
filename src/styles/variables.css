@@ -32,9 +32,9 @@
   --color-accent-blue: #2563eb;
   --color-accent-blue-strong: #1d4ed8;
   --color-accent-orange: #ea580c;
-  --color-accent-purple: #c9a8ff;
-  --color-badge-purple-bg: rgba(168, 116, 255, 0.14);
-  --color-badge-purple-border: rgba(168, 116, 255, 0.35);
+  --color-accent-purple: #da91ff;
+  --color-badge-purple-bg: #591775;
+  --color-badge-purple-border: transparent;
 
   /* Spacing */
   --space-1: 4px;

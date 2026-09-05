@@ -1,5 +1,6 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from "vue";
+import { useRouter } from "vue-router";
 import ProductCard from "../components/ProductCard.vue";
 import BaseBadge from "../components/base/BaseBadge.vue";
 import ChatWidget from "../components/ChatWidget.vue";
@@ -19,6 +20,7 @@ const emit = defineEmits(["back", "retry", "open", "browse"]);
 // DetailPage.vue와 동일한 이유로 아래 진단 문구(points 등)는 정적 콘텐츠다 — 자세한
 // 내용은 DetailPage.vue 상단 주석 참고. 챗봇에는 props.productCode를 그대로 넘긴다.
 const productName = "TIGER 미국S&P500레버리지(합성 H)";
+const simulationWidgetType = "A";
 
 const points = [
   {
@@ -31,15 +33,16 @@ const points = [
   },
 ];
 
+// 디자인 데모용 목업 — 실제 검색 API 연동은 아직 붙이지 않음.
 const recommended = [
-  { brand: "kodex" },
-  { brand: "kodex" },
-  { brand: "kodex" },
-  { brand: "globalx" },
-  { brand: "kodex" },
-  { brand: "kodex" },
-  { brand: "globalx" },
-  { brand: "kodex" },
+  { code: "069500", brand: "kodex" },
+  { code: "091160", brand: "kodex" },
+  { code: "371460", brand: "kodex" },
+  { code: "GLOBALX01", brand: "globalx" },
+  { code: "133690", brand: "kodex" },
+  { code: "195930", brand: "kodex" },
+  { code: "GLOBALX02", brand: "globalx" },
+  { code: "310970", brand: "kodex" },
 ];
 
 const recoTrack = ref(null);
@@ -77,16 +80,15 @@ onUnmounted(() => {
 
 <template>
   <div class="result-page">
-    <header class="top-bar">
-      <BrandLogo />
-
+    <PageHeader>
       <div class="badges">
-        <!-- <BaseBadge tone="purple">로그인 불필요</BaseBadge>
-        <BaseBadge tone="purple">개인정보 미수집</BaseBadge> -->
+        <BaseBadge v-for="label in session.profileBadges" :key="label" tone="gold">
+          {{ label }}
+        </BaseBadge>
       </div>
-    </header>
+    </PageHeader>
 
-    <button type="button" class="back-btn" @click="emit('back')">
+    <button type="button" class="back-btn" @click="router.back()">
       <svg
         viewBox="0 0 24 24"
         fill="none"
@@ -115,7 +117,7 @@ onUnmounted(() => {
     <section class="sim-section">
       <h2 class="reveal">이 상품에 100만원을 넣었다면 어떻게 됐을까요?</h2>
 
-      <div class="sim-box reveal">차트 영역 (디자인 예정)</div>
+      <DiagnosticWidget class="reveal" :type="simulationWidgetType" />
 
       <p class="sim-desc reveal">
         따라가는 지수는 제자리인데, 이 상품은 18만원이 사라졌습니다.<br />
@@ -134,7 +136,11 @@ onUnmounted(() => {
         </div>
       </div>
 
-      <button type="button" class="retry-btn reveal" @click="emit('retry')">
+      <button
+        type="button"
+        class="retry-btn reveal"
+        @click="router.push({ name: 'questions' })"
+      >
         조건 수정해서 다시 진단받기
       </button>
 
@@ -153,7 +159,11 @@ onUnmounted(() => {
       <div class="reco-carousel">
         <div ref="recoTrack" class="reco-grid">
           <div v-for="(r, i) in recommended" :key="i" class="reco-item">
-            <ProductCard :brand="r.brand" @open="emit('open')" />
+            <ProductCard
+              :brand="r.brand"
+              :code="r.code"
+              @open="router.push({ name: 'detail', params: { code: r.code } })"
+            />
           </div>
         </div>
 
@@ -191,6 +201,7 @@ onUnmounted(() => {
 
 <style scoped>
 .result-page {
+  position: relative;
   min-height: 100svh;
   box-sizing: border-box;
   padding: clamp(24px, 2.4vw, 40px) clamp(28px, 5vw, 80px) 60px;
@@ -202,11 +213,6 @@ onUnmounted(() => {
   );
 }
 
-.top-bar {
-  display: flex;
-  align-items: center;
-}
-
 .badges {
   margin-left: auto;
   display: flex;
@@ -214,7 +220,7 @@ onUnmounted(() => {
 }
 
 .back-btn {
-  margin-top: 18px;
+  margin-top: 50px;
   width: 32px;
   height: 32px;
   border-radius: 50%;
@@ -317,18 +323,6 @@ section {
   color: #fff;
   font-size: clamp(16px, 1.4vw, 20px);
   font-weight: 700;
-}
-
-.sim-box {
-  width: 100%;
-  height: clamp(180px, 22vw, 260px);
-  border-radius: 18px;
-  background: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #9098ab;
-  font-size: clamp(12px, 0.95vw, 14px);
 }
 
 .sim-desc {

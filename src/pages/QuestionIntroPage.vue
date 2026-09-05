@@ -4,16 +4,17 @@ import searchDocumentIcon from "../assets/icons/icon-search-document.png";
 import BrandLogo from "../components/base/BrandLogo.vue";
 import { setProfileAnswers } from "../lib/sessionState";
 
-const emit = defineEmits(["finish"]);
+const router = useRouter();
+const session = useSessionStore();
 
 const questions = [
   {
     title: "ETF를 얼마나 오래 가지고 계실 계획이신가요?",
-    subtitle: "어떤 상품은 오래 들고 있을수록 유리할 수 있어요",
+    subtitle: "어떤 상품은 오래 들고 있을수록 불리할 수 있어요",
     options: [
       "잘 모르겠어요",
       "1년 안에 팔 것 같아요",
-      "1~5년 정도\n가지고 있을 거예요.",
+      "1~5년 정도\n가지고 있을 거예요.",
       "5년 이상 길게 생각 중이에요.",
     ],
   },
@@ -31,12 +32,14 @@ const questions = [
     subtitle: "꼭 필요한 돈이라면 더 조심해서 알려드릴게요",
     options: [
       "없어져도 크게 문제 없는 여윳돈이에요",
-      "나중에 꼭 필요한 목적자금\n(주택·노후·학자금 등)\n하는 돈이에요",
+      "나중에 꼭 필요한 목적자금\n(주택·노후·학자금 등)\n하는 돈이에요",
     ],
   },
 ];
 
-const started = ref(false);
+// 인트로(환영 문구가 커졌다 작아지며 질문으로 넘어가는 연출)는 없애고 바로
+// 질문부터 시작한다 — 조건 자체(투자기간/목적/자금성격)는 그대로 물어본다.
+const started = ref(true);
 const step = ref(0);
 
 const answers = reactive({});
@@ -49,7 +52,8 @@ const previousQuestionTitle = computed(() => {
 });
 
 const progressPct = computed(() => {
-  return ((step.value + 1) / questions.length) * 100;
+  const figmaWidths = [389, 963, 1440];
+  return (figmaWidths[step.value] / 1440) * 100;
 });
 
 function select(i) {
@@ -72,12 +76,6 @@ function prev() {
     step.value -= 1;
   }
 }
-
-onMounted(() => {
-  setTimeout(() => {
-    started.value = true;
-  }, 2600);
-});
 </script>
 
 <template>
@@ -85,13 +83,11 @@ onMounted(() => {
     <!-- =========================
          TOP BAR
     ========================== -->
-    <header class="top-bar">
-      <BrandLogo />
-
+    <PageHeader>
       <div v-if="started" class="progress-track">
         <div class="progress-fill" :style="{ width: progressPct + '%' }" />
       </div>
-    </header>
+    </PageHeader>
 
     <!-- =========================
          저장 안내 문구
@@ -105,7 +101,7 @@ onMounted(() => {
     <!-- =========================
          인트로 / 이전 질문
     ========================== -->
-    <div class="intro-title-wrap" :class="{ settled: started }">
+    <div v-if="!started" class="intro-title-wrap" :class="{ settled: started }">
       <!-- 첫 번째 질문일 때 -->
       <h1 v-if="step === 0" class="intro-title">
         안녕하세요!<br />
@@ -129,8 +125,22 @@ onMounted(() => {
          QUESTION
     ========================== -->
     <transition name="qrise">
-      <div v-if="started" :key="step" class="question-block">
+      <div
+        v-if="started"
+        :key="step"
+        class="question-block"
+        :class="`question-step-${step + 1}`"
+      >
         <div class="question-head">
+          <p v-if="step === 0" class="prompt-copy">
+            안녕하세요!<br />
+            어려운 ETF를 쉽게 진단해드릴게요!
+          </p>
+
+          <p v-else class="prompt-copy previous-copy">
+            {{ previousQuestionTitle }}
+          </p>
+
           <h2 class="q-title">
             {{ current.title }}
           </h2>
@@ -171,9 +181,9 @@ onMounted(() => {
           </button>
 
           <button
+            v-if="answers[step] !== undefined"
             type="button"
             class="btn primary"
-            :disabled="answers[step] === undefined"
             @click="next"
           >
             다음으로
@@ -200,15 +210,7 @@ onMounted(() => {
 
   overflow: hidden;
 
-  background: linear-gradient(
-    180deg,
-    #0f0f0f 0%,
-    #0f0f0f 44%,
-    #111318 56%,
-    #151c27 67%,
-    #1a2636 80%,
-    #213450 100%
-  );
+  background: linear-gradient(180deg, #0d0d0d 53.515%, #3b5c91 133.86%);
 
   color: #ffffff;
 }
@@ -217,50 +219,29 @@ onMounted(() => {
    TOP BAR
 ================================================= */
 
-.top-bar {
-  position: absolute;
-
-  z-index: 20;
-
-  top: 20px;
-  left: 30px;
-  right: 30px;
-
-  display: flex;
-  align-items: center;
-
-  height: 44px;
-}
-
 /* =================================================
    PROGRESS
 ================================================= */
 
 .progress-track {
-  position: absolute;
+  position: fixed;
 
-  left: 50px;
+  left: 0;
   right: 0;
 
-  top: 50%;
+  top: 104px;
 
   height: 4px;
 
-  transform: translateY(-50%);
-
-  border-radius: 999px;
-
   overflow: hidden;
 
-  background: rgba(255, 255, 255, 0.12);
+  background: #1d2e49;
 }
 
 .progress-fill {
   height: 100%;
 
-  border-radius: inherit;
-
-  background: #3b82f6;
+  background: linear-gradient(90deg, #003b66 0%, #007acc 100%);
 
   transition: width 0.5s cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -319,8 +300,8 @@ onMounted(() => {
 .note-wrap.settled {
   left: auto;
 
-  top: 20px;
-  right: 30px;
+  top: 30px;
+  right: 48px;
 
   transform: none;
 }
@@ -330,11 +311,15 @@ onMounted(() => {
 
   opacity: 1;
 
-  color: rgba(255, 255, 255, 0.28);
+  color: #2c456d;
 
-  font-size: 10px;
+  font-size: 14px;
 
-  font-weight: 400;
+  font-weight: 500;
+
+  line-height: 1.4;
+
+  letter-spacing: -0.42px;
 
   white-space: nowrap;
 }
@@ -393,7 +378,7 @@ onMounted(() => {
 /* 질문 시작 후 */
 
 .intro-title-wrap.settled {
-  top: 115px;
+  top: 166px;
 
   transform: translateX(-50%);
 }
@@ -534,14 +519,11 @@ onMounted(() => {
 
   left: 50%;
 
-  /*
-    질문 전체를 화면 중심 근처에 배치
-  */
-  top: 54%;
+  top: 151px;
 
-  width: min(90%, 1180px);
+  width: min(calc(100% - 96px), 1212px);
 
-  transform: translate(-50%, -50%);
+  transform: translateX(-50%);
 
   display: flex;
 
@@ -551,7 +533,17 @@ onMounted(() => {
 
   text-align: center;
 
-  margin-top: -10px;
+  margin-top: 0;
+}
+
+.question-step-2 {
+  top: 179px;
+  width: min(calc(100% - 96px), 900px);
+}
+
+.question-step-3 {
+  top: 179px;
+  width: min(calc(100% - 96px), 588px);
 }
 
 /* =================================================
@@ -565,33 +557,49 @@ onMounted(() => {
 
   align-items: center;
 
-  gap: 12px;
+  width: min(100%, 565px);
+
+  gap: 0;
+}
+
+.prompt-copy {
+  margin: 0 0 24px;
+
+  color: #1d2e49;
+
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.4;
+  letter-spacing: -0.6px;
+}
+
+.previous-copy {
+  color: #1d2e49;
 }
 
 .q-title {
   margin: 0;
 
-  max-width: 860px;
-
   color: #ffffff;
 
-  font-size: 30px;
-  font-weight: 700;
+  font-size: 32px;
+  font-weight: 600;
 
   line-height: 1.4;
 
-  letter-spacing: -0.6px;
+  letter-spacing: -0.96px;
 }
 
 .q-sub {
   margin: 0;
 
-  color: #4da3ff;
+  color: #66c2ff;
 
-  font-size: 15px;
-  font-weight: 500;
+  font-size: 16px;
+  font-weight: 600;
 
-  line-height: 1.5;
+  line-height: 1.4;
+  letter-spacing: -0.48px;
 }
 
 /* =================================================
@@ -601,29 +609,26 @@ onMounted(() => {
 .options {
   width: 100%;
 
-  margin-top: 52px;
+  margin-top: 68px;
 
   display: grid;
 
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(4, 276px);
+  justify-content: center;
 
-  gap: 28px;
+  gap: 36px;
 }
 
 /* 3개 */
 
 .options.options-3 {
-  max-width: 900px;
-
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(3, 276px);
 }
 
 /* 2개 */
 
 .options.options-2 {
-  max-width: 620px;
-
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(2, 276px);
 }
 
 /* =================================================
@@ -633,7 +638,7 @@ onMounted(() => {
 .option {
   width: 100%;
 
-  height: 250px;
+  height: 301px;
 
   padding: 28px 24px;
 
@@ -646,16 +651,17 @@ onMounted(() => {
 
   border: none;
 
-  border-radius: 16px;
+  border-radius: 20px;
 
-  background: #e5e5e5;
+  background: #ffffff;
 
-  color: #16191f;
+  color: #010101;
 
-  font-size: 17px;
+  font-size: 20px;
   font-weight: 600;
 
-  line-height: 1.5;
+  line-height: 1.4;
+  letter-spacing: -0.6px;
 
   text-align: center;
 
@@ -663,7 +669,7 @@ onMounted(() => {
 
   cursor: pointer;
 
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
 
   transition:
     background 0.2s ease,
@@ -681,19 +687,19 @@ onMounted(() => {
 }
 
 .option:hover {
-  transform: translateY(-3px);
+  background: #e6e6e6;
 
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  transform: translateY(-3px);
 }
 
 /* 선택 */
 
 .option.selected {
-  background: #3b82f6;
+  background: #007acc;
 
   color: #ffffff;
 
-  box-shadow: 0 10px 24px rgba(59, 130, 246, 0.22);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
 }
 
 /* =================================================
@@ -708,22 +714,23 @@ onMounted(() => {
 
   gap: 12px;
 
-  margin-top: 58px;
+  margin-top: 80px;
 }
 
 .btn {
-  min-width: 88px;
+  min-height: 42px;
 
-  padding: 13px 26px;
+  padding: 10px 20px;
 
   border: none;
 
   border-radius: 999px;
 
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 600;
 
-  line-height: 1;
+  line-height: 1.4;
+  letter-spacing: -0.48px;
 
   cursor: pointer;
 
@@ -743,27 +750,27 @@ onMounted(() => {
 }
 
 .btn.primary {
-  background: #3b82f6;
+  background: #0099ff;
 
   color: #ffffff;
 }
 
 .btn.primary:hover {
-  background: #2f6fe0;
+  background: #0088e2;
 }
 
 .btn.primary:disabled:hover {
-  background: #3b82f6;
+  background: #0099ff;
 }
 
 .btn.ghost {
-  background: rgba(255, 255, 255, 0.1);
+  background: #a6a6a6;
 
-  color: #d6dbe5;
+  color: #ffffff;
 }
 
 .btn.ghost:hover {
-  background: rgba(255, 255, 255, 0.15);
+  background: #969696;
 }
 
 /* =================================================
@@ -785,19 +792,19 @@ onMounted(() => {
 .qrise-enter-from {
   opacity: 0;
 
-  transform: translate(-50%, calc(-50% + 45px));
+  transform: translateX(-50%) translateY(45px);
 }
 
 .qrise-enter-to {
   opacity: 1;
 
-  transform: translate(-50%, -50%);
+  transform: translateX(-50%);
 }
 
 .qrise-leave-to {
   opacity: 0;
 
-  transform: translate(-50%, calc(-50% - 15px));
+  transform: translateX(-50%) translateY(-15px);
 }
 
 /* =================================================
@@ -806,13 +813,20 @@ onMounted(() => {
 
 @media (max-height: 820px) and (min-width: 901px) {
   .intro-title-wrap.settled {
-    top: 150px;
+    top: 142px;
   }
 
   .question-block {
-    top: 55%;
-
     width: min(90%, 1080px);
+  }
+
+  .question-step-1 {
+    top: 132px;
+  }
+
+  .question-step-2,
+  .question-step-3 {
+    top: 150px;
   }
 
   .q-title {
@@ -824,19 +838,17 @@ onMounted(() => {
   }
 
   .options {
-    margin-top: 40px;
+    margin-top: 48px;
 
-    gap: 24px;
+    gap: 28px;
   }
 
   .option {
-    height: 215px;
-
     font-size: 16px;
   }
 
   .nav {
-    margin-top: 40px;
+    margin-top: 48px;
   }
 }
 
@@ -853,7 +865,7 @@ onMounted(() => {
     overflow-y: auto;
   }
 
-  .top-bar {
+  :deep(.page-header) {
     left: 24px;
     right: 24px;
   }
@@ -873,6 +885,13 @@ onMounted(() => {
     margin: 180px auto 0;
 
     transform: none;
+  }
+
+  .question-step-1,
+  .question-step-2,
+  .question-step-3 {
+    top: auto;
+    width: calc(100% - 48px);
   }
 
   .q-title {
@@ -939,7 +958,7 @@ onMounted(() => {
     padding-bottom: 50px;
   }
 
-  .top-bar {
+  :deep(.page-header) {
     top: 18px;
 
     left: 20px;

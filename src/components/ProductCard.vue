@@ -17,7 +17,19 @@ const logos = {
 const props = defineProps({
   brand: {
     type: String,
-    default: 'kodex', // 'kodex' | 'tiger' | 'proshares' | 'globalx'
+    default: 'default', // 'kodex' | 'tiger' | 'proshares' | 'globalx' | 'default'(로고 없음)
+  },
+  code: {
+    type: String,
+    default: '',
+  },
+  name: {
+    type: String,
+    default: '금융 상품 이름',
+  },
+  manager: {
+    type: String,
+    default: '',
   },
   // SearchPage.vue처럼 실제 종목을 나열할 때만 채워서 쓴다. DetailPage.vue의 추천
   // 캐러셀처럼 장식 목적으로만 쓰는 곳은 안 넘겨도 되게 플레이스홀더를 기본값으로 둔다.
@@ -39,7 +51,9 @@ const props = defineProps({
   },
 })
 
-const logoSrc = computed(() => logos[props.brand] ?? logos.kodex)
+// 로고 이미지가 있는 브랜드는 4개뿐 — 그 외(운용사 정보가 없거나 매핑이 안
+// 되는 대부분의 확장 유니버스 종목)는 로고 없이 코드 이니셜만 보여준다.
+const logoSrc = computed(() => logos[props.brand] ?? null)
 
 defineEmits(['open'])
 </script>
@@ -49,7 +63,8 @@ defineEmits(['open'])
     <BaseBadge v-if="disabled" class="analyzing-badge">분석 중</BaseBadge>
 
     <div class="banner" :class="brand">
-      <img :src="logoSrc" :alt="brand" class="brand-logo" />
+      <img v-if="logoSrc" :src="logoSrc" :alt="brand" class="brand-logo" />
+      <span v-else class="brand-fallback">{{ code || '?' }}</span>
     </div>
 
     <div class="body">
@@ -75,16 +90,20 @@ defineEmits(['open'])
 <style scoped>
 .product-card {
   position: relative;
-  border-radius: var(--radius-lg);
+  min-height: 258px;
+  border-radius: 20px;
   overflow: hidden;
-  background: var(--color-bg-card);
-  border: 1px solid var(--color-border-default);
-  transition: transform 0.2s ease, border-color 0.2s ease;
+  background: #404040;
+  border: 0;
+  box-shadow: none;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .product-card:not(.disabled):hover {
   transform: translateY(-2px);
-  border-color: var(--color-border-hover);
+  box-shadow: 0 0 20px rgba(99, 123, 185, 0.25);
 }
 
 .product-card.disabled {
@@ -102,14 +121,24 @@ defineEmits(['open'])
 
 .go-btn {
   position: absolute;
-  right: clamp(10px, 1vw, 16px);
-  bottom: clamp(10px, 1vw, 16px);
+  right: 16px;
+  bottom: 16px;
+
+  width: 38px;
+  height: 38px;
+
+  background: #1d2e49;
+  color: #ffffff;
+}
+
+.go-btn:hover {
+  background: #0f1826;
 }
 
 /* 배너 그라디언트/로고 색상은 kodex·globalx 브랜드 고유 색이라
    앱 디자인 토큰이 아닌 이 컴포넌트의 상수로 둔다. */
 .banner {
-  height: clamp(96px, 9vw, 140px);
+  height: 172px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -132,30 +161,56 @@ defineEmits(['open'])
   background: linear-gradient(135deg, #f6fff1 0%, #c2ff9f 100%);
 }
 
+.banner.default {
+  background: linear-gradient(135deg, var(--color-surface-subtle) 0%, var(--color-bg-card) 100%);
+}
+
 .brand-logo {
-  height: clamp(20px, 1.8vw, 28px);
+  height: clamp(28px, 2.6vw, 37px);
   width: auto;
   max-width: 78%;
   object-fit: contain;
 }
 
+.brand-fallback {
+  font-size: clamp(13px, 1.1vw, 16px);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--color-fg-muted);
+}
+
 .body {
-  padding: clamp(14px, 1.3vw, 20px);
+  min-height: 86px;
+  box-sizing: border-box;
+  padding: 16px;
+  background: #404040;
 }
 
 .line {
   margin: 0;
-  line-height: 1.6;
+  line-height: 1.4;
+  letter-spacing: -0.03em;
 }
 
 .line.title {
-  color: var(--color-fg-soft);
-  font-size: clamp(13px, 1.05vw, 16px);
+  max-width: calc(100% - 54px);
+
+  color: #ffffff;
+  font-size: 18px;
   font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .line.sub {
-  color: var(--color-fg-muted);
-  font-size: clamp(11px, 0.85vw, 13px);
+  max-width: calc(100% - 54px);
+
+  color: #8fbaf8;
+  font-size: 14px;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 </style>

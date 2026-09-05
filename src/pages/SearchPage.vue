@@ -5,7 +5,8 @@ import BaseBadge from "../components/base/BaseBadge.vue";
 import BrandLogo from "../components/base/BrandLogo.vue";
 import { listEtfs } from "../lib/chatApi";
 
-const emit = defineEmits(["back", "open"]);
+const router = useRouter();
+const session = useSessionStore();
 
 const query = ref("");
 const analyzedOnly = ref(false);
@@ -70,27 +71,13 @@ onUnmounted(() => clearTimeout(debounceTimer));
 
 <template>
   <div class="search-page">
-    <header class="top-bar">
-      <button type="button" class="back-btn" @click="emit('back')">
-        <svg
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2.2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-        >
-          <path d="M15 18 9 12l6-6" />
-        </svg>
-      </button>
-
-      <BrandLogo />
-
+    <PageHeader>
       <div class="badges">
-        <BaseBadge tone="purple">로그인 불필요</BaseBadge>
-        <BaseBadge tone="purple">개인정보 미수집</BaseBadge>
+        <BaseBadge v-for="label in session.profileBadges" :key="label" tone="gold">
+          {{ label }}
+        </BaseBadge>
       </div>
-    </header>
+    </PageHeader>
 
     <h1>찾고 싶은 금융 상품을 검색해보세요!</h1>
 
@@ -160,38 +147,12 @@ onUnmounted(() => clearTimeout(debounceTimer));
   position: relative;
   min-height: 100svh;
   box-sizing: border-box;
-  padding: clamp(24px, 2.4vw, 40px) clamp(28px, 5vw, 80px) 60px;
+  padding: 0 48px 72px;
   background: linear-gradient(
     180deg,
-    var(--color-bg-page-deep) 0%,
-    var(--color-bg-page-mid) 40%,
-    var(--color-bg-page) 100%
+    #09101a 0%,
+    #2f4c76 100%
   );
-}
-
-.top-bar {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-
-.back-btn {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  border: none;
-  background: var(--color-surface-subtle);
-  color: #cfd8ea;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  flex-shrink: 0;
-}
-
-.back-btn svg {
-  width: 16px;
-  height: 16px;
 }
 
 .badges {
@@ -201,24 +162,29 @@ onUnmounted(() => clearTimeout(debounceTimer));
 }
 
 h1 {
-  margin: clamp(28px, 4vw, 56px) 0 clamp(20px, 2.2vw, 32px);
+  margin: 0 0 40px;
+  padding-top: 160px;
   text-align: center;
-  font-size: clamp(24px, 2.6vw, 38px);
-  font-weight: 700;
+  font-size: 32px;
+  font-weight: 600;
   color: #fff;
+  line-height: 1.4;
+  letter-spacing: -0.96px;
 }
 
 .search-bar {
-  max-width: 1040px;
+  width: min(100%, 491px);
+  min-height: 52px;
   margin: 0 auto;
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: clamp(6px, 0.6vw, 10px) clamp(8px, 0.8vw, 12px)
-    clamp(6px, 0.6vw, 10px) clamp(18px, 1.6vw, 26px);
-  border-radius: 16px;
-  background: #0f1a2e;
-  border: 1px solid var(--color-border-subtle-strong);
+  box-sizing: border-box;
+  padding: 16px 20px;
+  border-radius: 999px;
+  background: #1d2e49;
+  border: 0;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.25);
 }
 
 .search-bar input {
@@ -226,7 +192,10 @@ h1 {
   border: none;
   background: transparent;
   color: #fff;
-  font-size: clamp(14px, 1.1vw, 18px);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.4;
+  letter-spacing: -0.42px;
   outline: none;
 }
 
@@ -235,12 +204,12 @@ h1 {
 }
 
 .search-btn {
-  width: clamp(34px, 3vw, 46px);
-  height: clamp(34px, 3vw, 46px);
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
   border: none;
-  background: #1d2c48;
-  color: #cfd8ea;
+  background: transparent;
+  color: #83a8e9;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -249,23 +218,27 @@ h1 {
 }
 
 .search-btn svg {
-  width: 44%;
-  height: 44%;
+  width: 16.25px;
+  height: 16.25px;
 }
 
 .result-bar {
-  max-width: 1040px;
-  margin: clamp(20px, 2vw, 30px) auto 16px;
+  width: auto;
+  margin: 56px -48px 25px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding-bottom: 14px;
-  border-bottom: 1px solid var(--color-border-subtle-strong);
+  padding: 25px max(48px, calc((100% - 1066px) / 2)) 0;
+  border-top: 4px solid #1d2e49;
+  border-bottom: 0;
 }
 
 .count {
-  font-size: clamp(13px, 1vw, 16px);
-  color: #8891a6;
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 1.4;
+  letter-spacing: -0.72px;
+  color: #f2f2f2;
 }
 
 .toggle {
@@ -274,8 +247,11 @@ h1 {
   gap: 6px;
   border: none;
   background: transparent;
-  color: var(--color-fg-muted);
-  font-size: clamp(12px, 0.9vw, 15px);
+  color: #e6e6e6;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.4;
+  letter-spacing: -0.42px;
   cursor: pointer;
   transition: color 0.2s ease;
 }
@@ -290,11 +266,11 @@ h1 {
 }
 
 .results {
-  max-width: 1040px;
+  max-width: 1066px;
   margin: 0 auto;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: clamp(16px, 1.6vw, 28px);
+  gap: 32px;
 }
 
 .state-msg {
@@ -310,8 +286,18 @@ h1 {
     padding: 20px 20px 48px;
   }
 
+  h1 {
+    margin-top: 64px;
+    font-size: 26px;
+  }
+
+  .search-bar {
+    max-width: 100%;
+  }
+
   .results {
     grid-template-columns: repeat(2, 1fr);
+    gap: 18px;
   }
 }
 
