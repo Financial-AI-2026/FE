@@ -491,8 +491,8 @@ function formatAnswer(text) {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  /* 왼쪽은 입력 텍스트 시작점, 오른쪽은 입력창 끝선에서 12px 간격이다. */
-  padding: 64px 36px 16px 46px;
+  /* 좌우 모두 입력창 테두리에서 12px 간격이다. */
+  padding: 64px 36px 16px 36px;
 }
 
 .chat-empty {
@@ -721,8 +721,8 @@ function formatAnswer(text) {
 
 @media (max-width: 560px) {
   .chat-body {
-    /* 모바일에서도 입력창 끝선과 사용자 질문 사이를 12px로 유지한다. */
-    padding: 64px 28px 16px 38px;
+    /* 모바일에서도 좌우 모두 입력창 테두리에서 12px 간격을 유지한다. */
+    padding: 64px 28px 16px 28px;
   }
 
   .chat-anchor {
