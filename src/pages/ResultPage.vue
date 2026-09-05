@@ -4,21 +4,21 @@ import { useRouter } from "vue-router";
 import ProductCard from "../components/ProductCard.vue";
 import BaseBadge from "../components/base/BaseBadge.vue";
 import ChatWidget from "../components/ChatWidget.vue";
-import BrandLogo from "../components/base/BrandLogo.vue";
-import { session } from "../lib/sessionState";
+import PageHeader from "../components/base/PageHeader.vue";
+import DiagnosticWidget from "../components/DiagnosticWidget.vue";
+import { useSessionStore } from "../stores/session";
 
-const props = defineProps({
-  // App.vue가 SearchPage.vue에서 고른 실제 종목 코드를 내려준다.
-  productCode: {
-    type: String,
-    default: "448290",
-  },
-});
+defineProps({ code: { type: String, default: "" } });
+const router = useRouter();
+const session = useSessionStore();
 
-const emit = defineEmits(["back", "retry", "open", "browse"]);
+// S6(진단 결과) 공통 추천 칩 — 종목/조건과 무관하게 동일하게 노출.
+const chatSuggestions = [
+  "이 상품, 제 조건에 맞나요?",
+  "왜 이런 결과가 나왔나요?",
+  "매수 전에 뭘 더 확인해야 하나요?",
+];
 
-// DetailPage.vue와 동일한 이유로 아래 진단 문구(points 등)는 정적 콘텐츠다 — 자세한
-// 내용은 DetailPage.vue 상단 주석 참고. 챗봇에는 props.productCode를 그대로 넘긴다.
 const productName = "TIGER 미국S&P500레버리지(합성 H)";
 const simulationWidgetType = "A";
 
@@ -189,12 +189,9 @@ onUnmounted(() => {
 
     <ChatWidget
       stage="s6"
-      :product-code="productCode"
-      :horizon="session.horizon"
-      :purpose="session.purpose"
-      :fund-nature="session.fundNature"
-      @retry="emit('retry')"
-      @view-products="emit('browse')"
+      :suggestions="chatSuggestions"
+      @retry="router.push({ name: 'questions' })"
+      @view-products="router.push({ name: 'search' })"
     />
   </div>
 </template>

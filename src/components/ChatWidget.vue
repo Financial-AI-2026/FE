@@ -1,13 +1,13 @@
 <script setup>
 import { ref, onMounted, onUnmounted, nextTick } from 'vue'
-import { marked } from 'marked'
-import DOMPurify from 'dompurify'
 import chatbotLogo from '../assets/images/chat_logo.png'
-import { getSuggestedQuestions, postChat } from '../lib/chatApi'
-
-marked.setOptions({ gfm: true, breaks: true })
 
 const props = defineProps({
+  // 화면(S4/S6)마다 다른 추천 질문 칩 — 클릭해도 전송되지 않는 예시 텍스트일 뿐이다.
+  suggestions: {
+    type: Array,
+    default: () => ['커버드콜이 뭐예요?', '합성은 무슨 뜻이에요?', '환헤지가 뭔가요?'],
+  },
   // S4-2(이해 확인 딤 처리) · S5(분석 중) 동안 버튼을 비활성화하기 위한 prop.
   disabled: {
     type: Boolean,
@@ -18,37 +18,10 @@ const props = defineProps({
     type: Boolean,
     default: true,
   },
-  // 현재 화면 단계. API 호출 시 'S4' | 'S6'로 변환해서 보낸다.
+  // 답변 정책이 단계별로 갈리는 시나리오(SC-03/04/06)를 위한 현재 화면 단계.
   stage: {
     type: String,
     default: 's4', // 's4' | 's6'
-  },
-  // 아래 여섯 개는 chatbot-api.md 기준 POST /api/v1/chat 필수/선택 필드.
-  // productCode는 SearchPage(S3) 선택, horizon/purpose/fundNature는
-  // QuestionIntroPage(S2) 응답(session.js)에서 부모가 실제 값을 내려준다.
-  productCode: {
-    type: String,
-    default: null,
-  },
-  horizon: {
-    type: String,
-    default: null, // 'SHORT' | 'MID' | 'LONG' | 'UNKNOWN'
-  },
-  purpose: {
-    type: String,
-    default: null, // 'CAPITAL_GAIN' | 'INCOME' | 'GROWTH'
-  },
-  fundNature: {
-    type: String,
-    default: null, // 'SPARE' | 'PURPOSE'
-  },
-  previousProductCode: {
-    type: String,
-    default: null,
-  },
-  compareProductCode: {
-    type: String,
-    default: null,
   },
 })
 
@@ -60,34 +33,140 @@ const messages = ref([])
 const bodyRef = ref(null)
 const showHint = ref(false)
 const isBodyScrolled = ref(false)
-const sending = ref(false)
-const suggestedQuestions = ref([])
-const suggestionsLoading = ref(false)
 let hintTimer = null
 
-function renderMarkdown(text) {
-  return DOMPurify.sanitize(marked.parse(text ?? ''))
+// SC-01 용어 설명 — 정확히 일치하는 질문에 대한 사전 정의.
+const glossary = {
+  '커버드콜이 뭐예요?':
+    '커버드콜은 주식을 보유하면서 동시에 그 주식에 대한 콜옵션을 파는 전략이에요. 옵션을 팔아서 받는 프리미엄만큼 추가 수익을 얻지만, 주가가 크게 오르면 그 이익은 제한돼요.',
+  '레버리지가 뭐예요?':
+    '레버리지는 기초지수가 하루 동안 움직이는 만큼의 배수(예: 2배)로 더 크게 움직이도록 설계된 구조예요. 오를 때도, 내릴 때도 그만큼 더 크게 움직여요.',
+  '합성은 무슨 뜻이에요?':
+    '합성은 실제 주식을 사는 대신 증권사와 계약(스왑)을 맺어서 그 수익률만큼을 받아오는 방식이에요. 실물 없이도 지수를 그대로 따라갈 수 있다는 장점이 있어요.',
+  '환헤지가 뭔가요?':
+    '환헤지는 환율이 오르내려도 수익률에 영향을 주지 않도록 미리 조치해두는 걸 말해요. 대신 그만큼의 비용(헤지 비용)이 들어가요.',
+  '이 상품, 제 조건에 맞나요?':
+    '위쪽 진단 결과에 표시된 경고가 회원님이 선택하신 조건과 어떻게 어긋나는지를 정리한 거예요. 화면에 나온 경고 카드를 함께 확인해보세요.',
+  '왜 이런 결과가 나왔나요?':
+    '회원님이 선택한 보유 기간·목적 조건과 이 상품의 구조(하루 단위 재계산 등)가 맞지 않는 부분이 있어서예요. 위쪽에서 어떤 조건이 어긋났는지 확인하실 수 있어요.',
+  '매수 전에 뭘 더 확인해야 하나요?':
+    '이 상품의 보수, 복제방식(합성/실물), 환헤지 여부, 그리고 투자설명서 원문을 함께 확인해보시길 권해드려요. 화면에 이미 정리되어 있어요.',
 }
 
-function apiStage() {
-  return props.stage === 's6' ? 'S6' : 'S4'
-}
+const fallbackAnswer =
+  '잘 이해하지 못했어요. 다시 한번 말씀해주시겠어요? 아래 추천 질문을 참고하셔도 좋아요.'
 
-async function loadSuggestions() {
-  if (messages.value.length > 0) return
-  suggestionsLoading.value = true
-  try {
-    const stage = apiStage()
-    const { suggestedQuestions: qs } = await getSuggestedQuestions({
-      stage,
-      code: stage === 'S4' ? props.productCode : null,
-    })
-    suggestedQuestions.value = qs ?? []
-  } catch {
-    suggestedQuestions.value = []
-  } finally {
-    suggestionsLoading.value = false
+// chatbot.md 3~5장의 답변 정책을 규칙 기반으로 흉내낸다.
+// 실제 LLM 없이도 "근거 없는 질문은 거절/대체 답변으로 처리한다"는 원칙을 지키기 위한 것.
+function resolveIntent(raw, stage) {
+  const q = raw.trim()
+
+  if (glossary[q]) return { kind: 'normal', text: glossary[q] }
+
+  // EX-04 · 대화 맥락을 벗어난 질문
+  if (['안녕', '날씨', '너 누구', '심심', '뭐해'].some((k) => q.includes(k))) {
+    return {
+      kind: 'normal',
+      text: '저는 ETF 상품의 구조를 설명해드리는 도우미예요. 투자 상품에 대한 질문만 답변드릴 수 있어요.',
+    }
   }
+
+  // SC-09 · 서비스 정체성 (SC-10의 "추천" 키워드보다 먼저 검사)
+  if ((q.includes('추천') && q.includes('왜')) || q.includes('이 서비스') || (q.includes('정보') && q.includes('어디서'))) {
+    return {
+      kind: 'normal',
+      text: '저희는 상품을 추천하는 서비스가 아니라, 사기 전에 무엇을 알아야 하는지 알려드리는 서비스예요.\n추천을 하려면 어떤 상품이 더 낫다고 판단해야 하는데, 그 판단은 사람마다 목적이 달라서 저희가 대신할 수 없어요.\n대신 관심 있는 상품의 구조를 투자설명서에서 찾아내고, 회원님 조건에서 주의할 점을 알려드려요.',
+    }
+  }
+
+  // SC-10 · 추천 요청 ❌ 거절
+  if (['추천', '뭘 사', '뭐가 나아', '골라'].some((k) => q.includes(k))) {
+    return {
+      kind: 'reject',
+      text: '저는 특정 상품을 추천하지 않아요.\n어떤 상품이 더 낫다는 판단은 사람마다 목적이 달라서 대신 내려드릴 수 없어요.\n대신 관심 있는 상품을 선택하시면, 그 상품의 구조와 회원님 조건에서 주의할 점을 알려드릴 수 있어요.',
+      action: { label: '상품 목록 보기', event: 'view-products' },
+    }
+  }
+
+  // SC-11 · 예측 요청 ❌ 거절
+  if (['오를까', '전망', '어떻게 될'].some((k) => q.includes(k))) {
+    return {
+      kind: 'reject',
+      text: '앞으로 가격이 어떻게 될지는 말씀드릴 수 없어요. 저는 시장을 예측하지 않거든요.\n대신 이 상품이 어떤 구조로 움직이는지는 설명해드릴 수 있어요.',
+    }
+  }
+
+  // SC-12 · 매매 타이밍 요청 ❌ 거절
+  if (['지금 사', '언제 팔', '저점'].some((k) => q.includes(k))) {
+    return {
+      kind: 'reject',
+      text: '언제 사고팔지는 말씀드릴 수 없어요. 투자 시점 판단은 회원님이 하셔야 하는 부분이에요.\n다만 이 상품은 보유 기간에 따라 결과가 크게 달라질 수 있어요.',
+      action: { label: '내 조건 바꾸기', event: 'retry' },
+    }
+  }
+
+  // SC-13 · 수익 계산 요청 ❌ 거절
+  if (q.includes('얼마 벌') || q.includes('얼마 넣어') || (q.includes('분배금') && q.includes('얼마'))) {
+    return {
+      kind: 'reject',
+      text: '얼마를 벌 수 있는지는 계산해드릴 수 없어요. 수익은 시장 상황과 운용 결과에 따라 달라지기 때문이에요.\n다만 이 상품은 1년에 한 번, 회계기간이 끝날 때만 소액을 분배해요. 매달 현금이 필요하시다면 이 구조는 맞지 않을 수 있어요.',
+    }
+  }
+
+  // SC-08 · 미지원 종목 질문
+  if (['코덱스', 'kodex', 'spy', '삼성전자', '카카오', '애플'].some((k) => q.toLowerCase().includes(k))) {
+    return {
+      kind: 'normal',
+      text: '지금은 이 8개 상품만 분석할 수 있어요.\n\n[국내] TIGER 미국나스닥100레버리지(합성) · TIGER 미국나스닥100커버드콜(합성) · TIGER 미국나스닥100채권혼합50 · TIGER 미국나스닥100 · TIGER 미국S&P500(H) · TIGER 200\n[해외] ProShares UltraPro QQQ(TQQQ) · Global X NASDAQ 100 Covered Call ETF(QYLD)\n\n투자설명서를 미리 분석해둔 상품들이라 그래요. 앞으로 분석 가능한 상품을 계속 늘려갈 계획입니다.',
+      action: { label: '상품 목록 보기', event: 'view-products' },
+    }
+  }
+
+  // SC-06 · 위험도 질문 (대체 답변, S6에서만 실제 경고를 언급)
+  if (q.includes('위험') || q.includes('안전')) {
+    return {
+      kind: 'normal',
+      text:
+        stage === 's6'
+          ? "위험도를 숫자나 등급으로 매기지는 않아요. 같은 상품도 목적에 따라 위험의 성격이 달라지기 때문이에요.\n대신 지금 조건에서는 '오래 들고 있으면 손해 볼 수 있어요'와 '주식을 직접 사지 않고 증권사와 약속만 했어요', 이 2가지가 어긋나요. 위쪽 진단 결과에서 확인해보세요."
+          : '위험도를 숫자나 등급으로 매기지는 않아요. 같은 상품도 어떤 목적으로 사느냐에 따라 위험의 성격이 완전히 달라지기 때문이에요.',
+    }
+  }
+
+  // SC-07 · 손실 가능성 질문 (일반론만)
+  if (['손해', '원금', '잃을'].some((k) => q.includes(k))) {
+    return {
+      kind: 'normal',
+      text: "네, 모든 투자에는 원금 손실 가능성이 있어요. 이 상품도 예외가 아니에요.\n다만 얼마나 손실이 날지는 시장 상황에 따라 달라서 미리 말씀드릴 수 없어요. 이 상품은 구조상 '오래 들고 있으면 손해 볼 수 있다'는 점을 특히 주의하셔야 해요.",
+    }
+  }
+
+  // SC-02 · 구조 질문
+  if (['하루', '뭘 담고', '실제로 뭘'].some((k) => q.includes(k))) {
+    return {
+      kind: 'normal',
+      text: '이 상품은 하루 기준으로 지수의 배수를 맞추도록 설계돼 있어요. 매일 장이 끝나면 다시 계산해서 다음 날 또 배수를 맞춰요.\n그래서 이틀 이상 보유하면, 지수가 움직인 만큼의 배수가 그대로 나오지 않을 수 있어요.\n\n📄 투자설명서 근거: "본 투자신탁은 기초지수의 일별수익률의 2배수의 수익률을 추적하는 것을 기본 투자목적으로 하고 있습니다."',
+    }
+  }
+
+  // SC-04 · 조건 대조 질문 (S6 전용)
+  if (stage === 's6' && ((q.includes('년') && (q.includes('들고') || q.includes('보유'))) || q.includes('짧게 사고팔'))) {
+    return {
+      kind: 'normal',
+      text: "보유 기간을 바꿔서 봐도, 하루 단위로 재계산되는 구조 자체는 똑같아서 며칠만 지나도 차이가 생길 수 있어요.\n다만 1년 안에 파실 계획이라면 '오래 들고 있으면 손해' 경고는 사라져요.\n직접 조건을 바꿔서 확인해보실 수 있어요.",
+      action: { label: '내 조건 바꾸기', event: 'retry' },
+    }
+  }
+
+  // SC-03 · 판정 이유 질문 (S6 전용)
+  if (stage === 's6' && (q.includes('안 맞') || (q.includes('경고') && q.includes('왜')) || q.includes('뭐가 문제'))) {
+    return {
+      kind: 'normal',
+      text: '회원님이 선택하신 조건에서는 이 상품이 2가지 지점에서 어긋나요.\n· 오래 들고 있으면 손해 볼 수 있어요\n· 주식을 직접 사지 않고 증권사와 약속만 했어요\n위쪽 진단 결과에서 자세히 확인해보세요.',
+    }
+  }
+
+  return null
 }
 
 function toggle() {
@@ -96,7 +175,6 @@ function toggle() {
   if (open.value) {
     showHint.value = false
     scrollToBottom()
-    loadSuggestions()
   } else {
     isBodyScrolled.value = false
   }
@@ -119,8 +197,6 @@ onMounted(() => {
 
 onUnmounted(() => {
   clearTimeout(hintTimer)
-  typingIntervals.forEach(clearInterval)
-  typingIntervals.clear()
 })
 
 function scrollToBottom() {
@@ -136,137 +212,46 @@ function updateScrollFade() {
   isBodyScrolled.value = (bodyRef.value?.scrollTop ?? 0) > 12
 }
 
-// 최근 대화(최대 3턴 = 메시지 6개)만 잘라서 보낸다 — 백엔드가 어차피 마지막 3턴만 사용.
-function buildHistory() {
-  return messages.value
-    .filter((m) => !m.typing)
-    .slice(-6)
-    .map((m) => ({ role: m.role === 'user' ? 'user' : 'assistant', content: m.text }))
-}
-
-const typingIntervals = new Set()
-
-// 답변 전체가 한 번에 뜨면 오래 걸린 것처럼 느껴져서, 다 받은 뒤에도 타이핑처럼 조금씩 흘려보낸다.
-// 액션 버튼(내 조건 바꾸기 등)은 다 흘러나온 뒤에 붙인다.
-function typeOut(aiIndex, fullText) {
-  return new Promise((resolve) => {
-    const chars = Array.from(fullText ?? '')
-    if (chars.length === 0) {
-      resolve()
-      return
-    }
-    const step = Math.max(1, Math.ceil(chars.length / 110))
-    let i = 0
-    const interval = setInterval(() => {
-      i = Math.min(chars.length, i + step)
-      const msg = messages.value[aiIndex]
-      if (!msg) {
-        clearInterval(interval)
-        typingIntervals.delete(interval)
-        resolve()
-        return
-      }
-      messages.value[aiIndex] = { ...msg, text: chars.slice(0, i).join('') }
-      scrollToBottom()
-      if (i >= chars.length) {
-        clearInterval(interval)
-        typingIntervals.delete(interval)
-        resolve()
-      }
-    }, 32)
-    typingIntervals.add(interval)
-  })
-}
-
-async function requestAndFill(aiIndex, payload) {
-  try {
-    const res = await postChat(payload)
-    messages.value[aiIndex] = {
-      role: 'ai',
-      typing: false,
-      text: '',
-      refusal: !!res.refusal,
-      action: 'NONE',
-      requestPayload: payload,
-    }
-    await typeOut(aiIndex, res.message)
-    const done = messages.value[aiIndex]
-    if (done) messages.value[aiIndex] = { ...done, action: res.action || 'NONE' }
-  } catch (e) {
-    // ETF_NOT_FOUND는 백엔드가 내려준 구체적인 메시지를 그대로 보여준다.
-    // 그 외(네트워크 끊김, CORS 차단, 5xx 등)는 브라우저의 원본 에러 문자열
-    // ("Failed to fetch" 등)을 그대로 노출하지 않고 안내 문구로 통일한다.
-    const isUnsupported = e.code === 'ETF_NOT_FOUND'
-    messages.value[aiIndex] = {
-      role: 'ai',
-      typing: false,
-      text: isUnsupported ? e.message : '지금 답변을 받아오지 못했어요. 잠시 후 다시 시도해주세요.',
-      refusal: false,
-      // 지원하지 않는 종목 에러는 같은 요청을 재전송해도 똑같이 실패하므로 재시도 버튼을 주지 않는다.
-      action: isUnsupported ? 'NONE' : 'RETRY',
-      requestPayload: payload,
-    }
-  } finally {
-    sending.value = false
-    scrollToBottom()
-  }
-}
-
 function send(text) {
   const question = text.trim()
-  if (!question || sending.value) return
-
-  const payload = {
-    message: question,
-    stage: apiStage(),
-    productCode: props.productCode,
-    horizon: props.horizon,
-    purpose: props.purpose,
-    fundNature: props.fundNature,
-    compareProductCode: props.compareProductCode,
-    previousProductCode: props.previousProductCode,
-    history: buildHistory(),
-  }
+  if (!question) return
 
   messages.value.push({ role: 'user', text: question })
-  messages.value.push({ role: 'ai', text: '', typing: true, refusal: false, action: 'NONE' })
+  messages.value.push({ role: 'ai', text: '', typing: true, kind: 'normal', action: null })
   const aiIndex = messages.value.length - 1
   draft.value = ''
-  sending.value = true
   scrollToBottom()
 
-  requestAndFill(aiIndex, payload)
+  setTimeout(() => {
+    const intent = resolveIntent(question, props.stage)
+    if (intent) {
+      messages.value[aiIndex] = { role: 'ai', typing: false, text: intent.text, kind: intent.kind, action: intent.action || null }
+    } else {
+      messages.value[aiIndex] = { role: 'ai', typing: false, text: fallbackAnswer, kind: 'normal', action: null }
+    }
+    scrollToBottom()
+  }, 1100)
 }
 
 function sendDraft() {
   send(draft.value)
 }
 
-function retry(index) {
-  const payload = messages.value[index]?.requestPayload
-  if (!payload || sending.value) return
-  messages.value[index] = { role: 'ai', text: '', typing: true, refusal: false, action: 'NONE' }
-  sending.value = true
-  scrollToBottom()
-  requestAndFill(index, payload)
+function runAction(action) {
+  if (!action) return
+  emit(action.event)
+  open.value = false
 }
 
-function runAction(action, index) {
-  if (action === 'CHANGE_CONDITIONS') {
-    emit('retry')
-    open.value = false
-  } else if (action === 'VIEW_PRODUCT_LIST') {
-    emit('view-products')
-    open.value = false
-  } else if (action === 'RETRY') {
-    retry(index)
-  }
-}
-
-const actionLabels = {
-  CHANGE_CONDITIONS: '내 조건 바꾸기',
-  VIEW_PRODUCT_LIST: '상품 목록 보기',
-  RETRY: '다시 시도',
+// 답변 데이터에 들어 있는 줄바꿈과 <br> 태그만 허용한다.
+// 다른 HTML은 이스케이프해 답변 문자열이 마크업으로 실행되지 않게 한다.
+function formatAnswer(text) {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/&lt;br\s*\/?&gt;/gi, '<br>')
+    .replace(/\n/g, '<br>')
 }
 </script>
 
@@ -312,8 +297,7 @@ const actionLabels = {
             <p>어려운 용어와 상품 구조를 쉽게 풀어드려요</p>
 
             <div class="chat-suggestions">
-              <!-- 클릭해도 전송되지 않는 예시 텍스트일 뿐이다. -->
-              <span v-for="s in suggestedQuestions" :key="s" class="chat-chip">{{ s }}</span>
+              <span v-for="s in suggestions" :key="s" class="chat-chip">{{ s }}</span>
             </div>
           </div>
 
@@ -325,15 +309,15 @@ const actionLabels = {
                 <span /><span /><span />
               </div>
 
-              <div v-else class="chat-answer">
-                <div class="chat-answer-body" v-html="renderMarkdown(m.text)" />
+              <div v-else class="chat-answer" :class="{ reject: m.kind === 'reject' }">
+                <p v-html="formatAnswer(m.text)" />
                 <button
-                  v-if="m.action && m.action !== 'NONE'"
+                  v-if="m.action"
                   type="button"
                   class="chat-action-btn"
-                  @click="runAction(m.action, i)"
+                  @click="runAction(m.action)"
                 >
-                  {{ actionLabels[m.action] }}
+                  {{ m.action.label }}
                 </button>
               </div>
             </div>
@@ -342,8 +326,8 @@ const actionLabels = {
         </div>
 
         <form class="chat-input-bar" @submit.prevent="sendDraft">
-          <input v-model="draft" type="text" placeholder="무엇이든 물어보세요" :disabled="sending" />
-          <button type="submit" class="chat-send" :disabled="!draft.trim() || sending" aria-label="보내기">
+          <input v-model="draft" type="text" placeholder="무엇이든 물어보세요" />
+          <button type="submit" class="chat-send" :disabled="!draft.trim()" aria-label="보내기">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
               <path d="M12 19V5" />
               <path d="m5 12 7-7 7 7" />
@@ -594,58 +578,15 @@ const actionLabels = {
   text-align: left;
 }
 
-.chat-answer-body {
+.chat-answer p {
   color: #0d0d0d;
-  font-size: var(--type-body-01);
-  font-weight: var(--type-weight-medium);
-  line-height: var(--type-line-height);
-  letter-spacing: var(--type-letter-spacing);
 }
 
-.chat-answer-body :deep(p) {
-  margin: 0 0 8px;
-}
-
-.chat-answer-body :deep(p:last-child) {
-  margin-bottom: 0;
-}
-
-.chat-answer-body :deep(strong) {
-  font-weight: 700;
-}
-
-.chat-answer-body :deep(ul),
-.chat-answer-body :deep(ol) {
-  margin: 4px 0 8px;
-  padding-left: 20px;
-}
-
-.chat-answer-body :deep(table) {
-  border-collapse: collapse;
-  width: 100%;
-  margin: 10px 0;
-  font-size: 0.92em;
-}
-
-.chat-answer-body :deep(th),
-.chat-answer-body :deep(td) {
-  border: 1px solid #e2e4ea;
-  padding: 6px 10px;
-  text-align: left;
-}
-
-.chat-answer-body :deep(th) {
-  background: #f7f8fa;
-  font-weight: 700;
-}
-
-.chat-answer-body :deep(blockquote) {
-  margin: 8px 0;
-  padding: 8px 12px;
-  border-left: 3px solid #cfd8ea;
-  color: #5b667e;
-  background: #f7f8fb;
-  border-radius: 4px;
+/* SC-10~13 거절 카드: 일반 답변과 시각적으로 구분되는 중립 톤 배경. 아이콘은 넣지 않는다. */
+.chat-answer.reject {
+  background: #f3f4f6;
+  border-radius: 14px;
+  padding: 14px 16px;
 }
 
 .chat-action-btn {
