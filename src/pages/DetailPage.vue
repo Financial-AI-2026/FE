@@ -53,9 +53,6 @@ const recommended = [
 const showUnderstandModal = ref(false);
 const chatWidgetRef = ref(null);
 
-// S4(이름 해독) 단계 추천 칩.
-const chatSuggestions = ["레버리지가 뭐예요?", "합성은 무슨 뜻이에요?", "환헤지가 뭔가요?"];
-
 const scrollbar = reactive({ heightPct: 100, topPct: 0 });
 
 function updateScrollbar() {
@@ -362,7 +359,10 @@ function openEtf(code) {
     <ChatWidget
       ref="chatWidgetRef"
       stage="s4"
-      :suggestions="chatSuggestions"
+      :product-code="props.code"
+      :horizon="session.horizon"
+      :purpose="session.purpose"
+      :fund-nature="session.fundNature"
       :disabled="showUnderstandModal"
       @retry="router.push({ name: 'questions' })"
       @view-products="router.push({ name: 'search' })"
