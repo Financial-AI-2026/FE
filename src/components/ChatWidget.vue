@@ -117,6 +117,8 @@ onMounted(() => {
 
 onUnmounted(() => {
   clearTimeout(hintTimer)
+  typingIntervals.forEach(clearInterval)
+  typingIntervals.clear()
 })
 
 function scrollToBottom() {
@@ -140,17 +142,54 @@ function buildHistory() {
     .map((m) => ({ role: m.role === 'user' ? 'user' : 'assistant', content: m.text }))
 }
 
+const typingIntervals = new Set()
+
+// 답변 전체가 한 번에 뜨면 오래 걸린 것처럼 느껴져서, 다 받은 뒤에도 타이핑처럼 조금씩 흘려보낸다.
+// 액션 버튼(내 조건 바꾸기 등)은 다 흘러나온 뒤에 붙인다.
+function typeOut(aiIndex, fullText) {
+  return new Promise((resolve) => {
+    const chars = Array.from(fullText ?? '')
+    if (chars.length === 0) {
+      resolve()
+      return
+    }
+    const step = Math.max(1, Math.ceil(chars.length / 110))
+    let i = 0
+    const interval = setInterval(() => {
+      i = Math.min(chars.length, i + step)
+      const msg = messages.value[aiIndex]
+      if (!msg) {
+        clearInterval(interval)
+        typingIntervals.delete(interval)
+        resolve()
+        return
+      }
+      messages.value[aiIndex] = { ...msg, text: chars.slice(0, i).join('') }
+      scrollToBottom()
+      if (i >= chars.length) {
+        clearInterval(interval)
+        typingIntervals.delete(interval)
+        resolve()
+      }
+    }, 32)
+    typingIntervals.add(interval)
+  })
+}
+
 async function requestAndFill(aiIndex, payload) {
   try {
     const res = await postChat(payload)
     messages.value[aiIndex] = {
       role: 'ai',
       typing: false,
-      text: res.message,
+      text: '',
       refusal: !!res.refusal,
-      action: res.action || 'NONE',
+      action: 'NONE',
       requestPayload: payload,
     }
+    await typeOut(aiIndex, res.message)
+    const done = messages.value[aiIndex]
+    if (done) messages.value[aiIndex] = { ...done, action: res.action || 'NONE' }
   } catch (e) {
     // ETF_NOT_FOUND는 백엔드가 내려준 구체적인 메시지를 그대로 보여준다.
     // 그 외(네트워크 끊김, CORS 차단, 5xx 등)는 브라우저의 원본 에러 문자열
@@ -271,15 +310,8 @@ const actionLabels = {
             <p>어려운 용어와 상품 구조를 쉽게 풀어드려요</p>
 
             <div class="chat-suggestions">
-              <button
-                v-for="s in suggestedQuestions"
-                :key="s"
-                type="button"
-                class="chat-chip"
-                @click="send(s)"
-              >
-                {{ s }}
-              </button>
+              <!-- 클릭해도 전송되지 않는 예시 텍스트일 뿐이다. -->
+              <span v-for="s in suggestedQuestions" :key="s" class="chat-chip">{{ s }}</span>
             </div>
           </div>
 
@@ -291,7 +323,7 @@ const actionLabels = {
                 <span /><span /><span />
               </div>
 
-              <div v-else class="chat-answer" :class="{ reject: m.refusal }">
+              <div v-else class="chat-answer">
                 <div v-html="renderMarkdown(m.text)" />
                 <button
                   v-if="m.action && m.action !== 'NONE'"
@@ -519,18 +551,10 @@ const actionLabels = {
   border: 1px solid #e2e4ea;
   background: #fff;
   color: #a6a6a6;
-  font-family: inherit;
   font-size: var(--type-caption);
   font-weight: var(--type-weight-regular);
   line-height: var(--type-line-height);
   letter-spacing: var(--type-letter-spacing);
-  cursor: pointer;
-  transition: background 0.2s ease, color 0.2s ease;
-}
-
-.chat-chip:hover {
-  background: #f4f6fa;
-  color: #6b7280;
 }
 
 .chat-messages {
@@ -568,9 +592,12 @@ const actionLabels = {
   text-align: left;
 }
 
+.chat-answer {
+  color: #0d0d0d;
+}
+
 .chat-answer :deep(p) {
   margin: 0 0 8px;
-  color: #0d0d0d;
 }
 
 .chat-answer :deep(p:last-child) {
@@ -601,13 +628,6 @@ const actionLabels = {
 .chat-answer :deep(th) {
   background: #f7f8fa;
   font-weight: 700;
-}
-
-/* SC-10~13 거절 카드: 일반 답변과 시각적으로 구분되는 중립 톤 배경. 아이콘은 넣지 않는다. */
-.chat-answer.reject {
-  background: #f3f4f6;
-  border-radius: 14px;
-  padding: 14px 16px;
 }
 
 .chat-action-btn {

@@ -1,20 +1,46 @@
 <script setup>
-import { onMounted } from "vue";
+import { ref, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import BaseBadge from "../components/base/BaseBadge.vue";
 import PageHeader from "../components/base/PageHeader.vue";
 import ChatWidget from "../components/ChatWidget.vue";
 import docSearchIcon from "../assets/icons/loading-doc-search.png";
+import { fetchEtfDetail, fetchEtfDiagnosis } from "../api/client";
 import { useSessionStore } from "../stores/session";
 
-const props = defineProps({ code: { type: String, default: "" } });
+const props = defineProps({ code: { type: String, required: true } });
+
 const router = useRouter();
 const session = useSessionStore();
 
-onMounted(() => {
+const etfName = ref("");
+
+const MIN_DISPLAY_MS = 1800; // 연출용 최소 노출 시간 — 실제 조회가 더 빨라도 이 정도는 보여준다
+
+onMounted(async () => {
+  if (!session.hasConditions) {
+    router.replace({ name: "questions" });
+    return;
+  }
+
+  const started = Date.now();
+  try {
+    const [detail] = await Promise.all([
+      fetchEtfDetail(props.code),
+      // S6에서 다시 조회하긴 하지만, 여기서 미리 한 번 호출해두면 진단
+      // API가 실패하는 경우(조건 오류 등)를 로딩 화면에서 먼저 알아챌 수 있다.
+      fetchEtfDiagnosis(props.code, session.conditionParams),
+    ]);
+    etfName.value = detail.name;
+  } catch {
+    // 실패해도 진행 — 실제 에러 메시지는 ResultPage가 다시 조회하며 보여준다.
+  }
+
+  const elapsed = Date.now() - started;
+  const remaining = Math.max(0, MIN_DISPLAY_MS - elapsed);
   setTimeout(() => {
     router.push({ name: "result", params: { code: props.code } });
-  }, 1800);
+  }, remaining);
 });
 </script>
 
@@ -29,8 +55,7 @@ onMounted(() => {
     </PageHeader>
 
     <div class="content">
-      <h1>TIGER 미국S&amp;P500레버리지(합성 H)</h1>
-      <p class="issuer">미래에셋자산운용</p>
+      <h1>{{ etfName || code }}</h1>
 
       <img :src="docSearchIcon" class="loading-icon" alt="" />
 
