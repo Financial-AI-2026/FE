@@ -5,6 +5,7 @@ import ProductCard from "../components/ProductCard.vue";
 import BaseBadge from "../components/base/BaseBadge.vue";
 import ChatWidget from "../components/ChatWidget.vue";
 import PageHeader from "../components/base/PageHeader.vue";
+import DiagnosticWidget from "../components/DiagnosticWidget.vue";
 import { fetchEtfDiagnosis, fetchEtfs, fetchEtfsByCodes, ApiError } from "../api/client";
 import { useSessionStore } from "../stores/session";
 
@@ -187,8 +188,9 @@ onUnmounted(() => {
         <!-- warningsVisible만큼(최대 2개, F-S6-02) 각자 hero+sim 블록 하나씩 -->
         <section v-for="w in visibleWarnings" :key="w.code" class="sim-section">
           <h2 class="reveal">{{ w.title || w.summary }}</h2>
-          <div class="sim-box reveal">{{ w.body }}</div>
-          <p v-if="w.widget" class="sim-desc reveal">{{ w.widget.disclaimer }}</p>
+          <DiagnosticWidget v-if="w.widget" class="reveal" :type="w.widget.type" />
+          <p class="sim-desc reveal">{{ w.body }}</p>
+          <p v-if="w.widget" class="sim-disclaimer reveal">{{ w.widget.disclaimer }}</p>
         </section>
 
         <div v-if="heroEvidence" class="source-box reveal">
@@ -421,16 +423,11 @@ section {
   font-weight: 700;
 }
 
-.sim-box {
-  width: 100%;
-  height: clamp(180px, 22vw, 260px);
-  border-radius: 18px;
-  background: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #9098ab;
-  font-size: clamp(12px, 0.95vw, 14px);
+.sim-disclaimer {
+  margin: clamp(12px, 1.2vw, 18px) 0 0;
+  color: #5b667e;
+  font-size: clamp(11px, 0.85vw, 13px);
+  line-height: 1.6;
 }
 
 .sim-desc {
