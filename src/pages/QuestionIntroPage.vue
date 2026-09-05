@@ -1,9 +1,8 @@
 <script setup>
-import { ref, reactive, computed } from "vue";
-import { useRouter } from "vue-router";
-import searchDocumentIcon from "../assets/icons/icon-note-document.png";
-import PageHeader from "../components/base/PageHeader.vue";
-import { useSessionStore } from "../stores/session";
+import { ref, reactive, computed, onMounted } from "vue";
+import searchDocumentIcon from "../assets/icons/icon-search-document.png";
+import BrandLogo from "../components/base/BrandLogo.vue";
+import { setProfileAnswers } from "../lib/sessionState";
 
 const router = useRouter();
 const session = useSessionStore();
@@ -67,8 +66,8 @@ function next() {
   if (step.value < questions.length - 1) {
     step.value += 1;
   } else {
-    session.setAnswers(answers);
-    router.push({ name: "search" });
+    setProfileAnswers(answers);
+    emit("finish");
   }
 }
 

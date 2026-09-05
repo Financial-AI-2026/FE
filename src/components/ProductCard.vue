@@ -31,6 +31,20 @@ const props = defineProps({
     type: String,
     default: '',
   },
+  // SearchPage.vue처럼 실제 종목을 나열할 때만 채워서 쓴다. DetailPage.vue의 추천
+  // 캐러셀처럼 장식 목적으로만 쓰는 곳은 안 넘겨도 되게 플레이스홀더를 기본값으로 둔다.
+  code: {
+    type: String,
+    default: '번호',
+  },
+  name: {
+    type: String,
+    default: '금융 상품 이름',
+  },
+  issuer: {
+    type: String,
+    default: '회사 이름',
+  },
   disabled: {
     type: Boolean,
     default: false,
@@ -56,14 +70,14 @@ defineEmits(['open'])
     <div class="body">
       <p class="line title">{{ name }}</p>
       <p class="line sub">{{ code }}</p>
-      <p class="line sub">{{ manager || '운용사 확인 중' }}</p>
+      <p class="line sub">{{ issuer }}</p>
     </div>
 
     <BaseButton
       class="go-btn"
       :disabled="disabled"
       aria-label="상세 보기"
-      @click="$emit('open')"
+      @click="$emit('open', code)"
     >
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M7 17 17 7" />
