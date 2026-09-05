@@ -4,6 +4,7 @@ import ProductCard from "../components/ProductCard.vue";
 import BaseBadge from "../components/base/BaseBadge.vue";
 import ChatWidget from "../components/ChatWidget.vue";
 import BrandLogo from "../components/base/BrandLogo.vue";
+import DiagnosticWidget from "../components/DiagnosticWidget.vue";
 
 const emit = defineEmits(["back", "retry", "open", "browse"]);
 
@@ -15,6 +16,7 @@ const chatSuggestions = [
 ];
 
 const productName = "TIGER 미국S&P500레버리지(합성 H)";
+const simulationWidgetType = "A";
 
 const points = [
   {
@@ -111,7 +113,7 @@ onUnmounted(() => {
     <section class="sim-section">
       <h2 class="reveal">이 상품에 100만원을 넣었다면 어떻게 됐을까요?</h2>
 
-      <div class="sim-box reveal">차트 영역 (디자인 예정)</div>
+      <DiagnosticWidget class="reveal" :type="simulationWidgetType" />
 
       <p class="sim-desc reveal">
         따라가는 지수는 제자리인데, 이 상품은 18만원이 사라졌습니다.<br />
@@ -310,18 +312,6 @@ section {
   color: #fff;
   font-size: clamp(16px, 1.4vw, 20px);
   font-weight: 700;
-}
-
-.sim-box {
-  width: 100%;
-  height: clamp(180px, 22vw, 260px);
-  border-radius: 18px;
-  background: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #9098ab;
-  font-size: clamp(12px, 0.95vw, 14px);
 }
 
 .sim-desc {
