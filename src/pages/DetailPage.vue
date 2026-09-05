@@ -1,26 +1,60 @@
 <script setup>
 import { ref, reactive, onMounted, onUnmounted } from "vue";
+import { useRouter } from "vue-router";
 import ProductCard from "../components/ProductCard.vue";
 import BaseBadge from "../components/base/BaseBadge.vue";
-import BrandLogo from "../components/base/BrandLogo.vue";
+import PageHeader from "../components/base/PageHeader.vue";
 import ChatWidget from "../components/ChatWidget.vue";
 import magnifierIcon from "../assets/icons/icon-search.png";
 import warningIcon from "../assets/icons/warning-triangle.svg";
 import tigerLogo from "../assets/icons/tiger.png";
+import { useSessionStore } from "../stores/session";
 
-const emit = defineEmits(["back", "diagnose", "retry"]);
+// 디자인 데모용 목업 — 실제 상품 조회/진단 API 연동은 아직 붙이지 않음
+// (백엔드 서빙 준비 전까지 의도적으로 미연동, code는 라우팅에만 사용).
+const props = defineProps({ code: { type: String, required: true } });
+
+const router = useRouter();
+const session = useSessionStore();
+
+const loading = ref(false);
+const errorMessage = ref(null);
+
+const etf = {
+  code: props.code,
+  market: "KR",
+  hiddenInsight: {
+    summary: "레버리지, 항상 2배는 아니에요",
+    body: "하루 수익률 기준으로만 2배를 따라가요.",
+  },
+  evidence: [
+    {
+      quote:
+        "본 투자신탁은 기초지수의 일별수익률의 2배수의 수익률을 추적하는 것을 기본 투자목적으로 하고 있습니다. 이때 하루가 아닌 2영업일 이상의 투자기간에 걸쳐 실현되는 실제 누적수익률은 동 기간 내 기초지수의 누적수익률의 정확히 2배 수익률과 크게 괴리되거나 반대 방향을 나타낼 수 있습니다.",
+    },
+  ],
+};
 
 const productName = "TIGER 미국S&P500레버리지(합성 H)";
+const heroLogo = tigerLogo;
+
+// "다른 ETF 상품도 살펴보세요" — 디자인 데모용 목업, 고정 8개.
+const recommended = [
+  { code: "069500", name: "KODEX 200", manager: "삼성자산운용", ready: true },
+  { code: "091160", name: "KODEX 반도체", manager: "삼성자산운용", ready: true },
+  { code: "371460", name: "TIGER 차이나전기차SOLACTIVE", manager: "미래에셋자산운용", ready: true },
+  { code: "GLOBALX01", name: "Global X Robotics & AI ETF", manager: "Global X", ready: true },
+  { code: "195930", name: "KODEX 미국S&P500TR", manager: "삼성자산운용", ready: true },
+  { code: "GLOBALX02", name: "Global X SuperDividend ETF", manager: "Global X", ready: false },
+  { code: "310970", name: "KODEX 200TR", manager: "삼성자산운용", ready: true },
+  { code: "133690", name: "TIGER 미국나스닥100", manager: "미래에셋자산운용", ready: true },
+];
 
 const showUnderstandModal = ref(false);
 const chatWidgetRef = ref(null);
 
-// S4(이름 해독) 단계 추천 칩 — 이 상품 이름 토큰(레버리지/합성/H) 기준.
-const chatSuggestions = [
-  "레버리지가 뭐예요?",
-  "합성은 무슨 뜻이에요?",
-  "환헤지가 뭔가요?",
-];
+// S4(이름 해독) 단계 추천 칩.
+const chatSuggestions = ["레버리지가 뭐예요?", "합성은 무슨 뜻이에요?", "환헤지가 뭔가요?"];
 
 const scrollbar = reactive({ heightPct: 100, topPct: 0 });
 
@@ -49,7 +83,13 @@ function rereadFromTop() {
 
 function confirmUnderstood() {
   showUnderstandModal.value = false;
-  emit("diagnose");
+  if (!session.hasConditions) {
+    // 조건(투자기간/목적/자금성격) 없이 여기로 바로 들어온 경우 — 진단 API가
+    // 세 값을 전부 필수로 요구하므로 먼저 질문 화면으로 보낸다.
+    router.push({ name: "questions" });
+    return;
+  }
+  router.push({ name: "detail-loading", params: { code: props.code } });
 }
 
 onMounted(() => {
@@ -65,6 +105,7 @@ onUnmounted(() => {
   window.removeEventListener("resize", updateScrollbar);
 });
 
+// 이름 토큰 분해 — 디자인 데모용 목업.
 const terms = [
   {
     label: "TIGER",
@@ -81,8 +122,7 @@ const terms = [
   {
     label: "레버리지",
     phrase: "2배로 따라가는데",
-    detail:
-      "기초지수가 하루 동안 오르내리는 만큼의 2배로 움직이도록 설계된 상품이에요.",
+    detail: "기초지수가 하루 동안 오르내리는 만큼의 2배로 움직이도록 설계된 상품이에요.",
   },
   {
     label: "합성",
@@ -93,13 +133,13 @@ const terms = [
   {
     label: "H",
     phrase: "환율 걱정은 없는 상품",
-    detail:
-      "환헤지(Hedge)가 적용돼 있어서, 환율이 오르내려도 수익률에 영향을 주지 않아요.",
+    detail: "환헤지(Hedge)가 적용돼 있어서, 환율이 오르내려도 수익률에 영향을 주지 않아요.",
   },
 ];
 
 const activeTerm = ref(0);
 
+// 구조 Q&A — 디자인 데모용 목업.
 const qa = [
   {
     q: "어떤 지수를 따라가나요?",
@@ -139,25 +179,23 @@ const qa = [
   },
 ];
 
-const recommended = [
-  { brand: "kodex" },
-  { brand: "kodex" },
-  { brand: "kodex" },
-  { brand: "globalx" },
-  { brand: "kodex" },
-  { brand: "kodex" },
-  { brand: "globalx" },
-  { brand: "kodex" },
+const hiddenInsightEvidence = etf.evidence[0];
+
+const BRAND_BY_MANAGER_KEYWORD = [
+  ["미래에셋", "tiger"],
+  ["삼성", "kodex"],
+  ["Global X", "globalx"],
+  ["ProShares", "proshares"],
 ];
 
-const recoTrack = ref(null);
+function brandFor(manager) {
+  if (!manager) return "default";
+  const hit = BRAND_BY_MANAGER_KEYWORD.find(([keyword]) => manager.includes(keyword));
+  return hit ? hit[1] : "default";
+}
 
-function scrollRecoNext() {
-  const el = recoTrack.value;
-  if (!el) return;
-  const amount = el.clientWidth * 0.8;
-  const atEnd = el.scrollLeft + el.clientWidth >= el.scrollWidth - 4;
-  el.scrollTo({ left: atEnd ? 0 : el.scrollLeft + amount, behavior: "smooth" });
+function openEtf(code) {
+  router.push({ name: "detail", params: { code } });
 }
 </script>
 
@@ -176,16 +214,15 @@ function scrollRecoNext() {
       />
     </div>
 
-    <header class="top-bar">
-      <BrandLogo />
+    <PageHeader>
+      <div class="badges">
+        <BaseBadge v-for="label in session.profileBadges" :key="label" tone="gold">
+          {{ label }}
+        </BaseBadge>
+      </div>
+    </PageHeader>
 
-      <!-- <div class="badges">
-        <BaseBadge tone="purple">로그인 불필요</BaseBadge>
-        <BaseBadge tone="purple">개인정보 미수집</BaseBadge>
-      </div> -->
-    </header>
-
-    <button type="button" class="back-btn" @click="emit('back')">
+    <button type="button" class="back-btn" @click="router.back()">
       <svg
         viewBox="0 0 24 24"
         fill="none"
@@ -198,16 +235,21 @@ function scrollRecoNext() {
       </svg>
     </button>
 
-    <section class="hero-section">
-      <h1>{{ productName }}</h1>
-      <p class="issuer">미래에셋자산운용</p>
+    <p v-if="loading" class="state-text">불러오는 중…</p>
+    <p v-else-if="errorMessage" class="state-text">{{ errorMessage }}</p>
 
-      <div class="promo-banner">
-        <img :src="tigerLogo" class="promo-logo" alt="TIGER ETF" />
-      </div>
-    </section>
+    <template v-else-if="etf">
+      <section class="hero-section">
+        <h1>{{ productName }}</h1>
+        <p class="issuer">{{ etf.market === "US" ? "해외(US) 상장" : "국내(KR) 상장" }}</p>
 
-    <section class="name-section">
+        <div class="promo-banner">
+          <img v-if="heroLogo" :src="heroLogo" class="promo-logo" :alt="productName" />
+          <span v-else class="promo-fallback">{{ etf.code }}</span>
+        </div>
+      </section>
+
+      <section class="name-section">
       <h2>이름에 대해서 먼저 알려드릴게요!</h2>
 
       <div class="name-breakdown">
@@ -266,7 +308,7 @@ function scrollRecoNext() {
 
           <div class="qa-row qa-row-sub">
             <p class="qa-tag">{{ item.tag }}</p>
-            <p class="qa-sub">{{ item.sub }}</p>
+            <p v-if="item.sub" class="qa-sub">{{ item.sub }}</p>
           </div>
         </div>
       </div>
@@ -277,11 +319,9 @@ function scrollRecoNext() {
 
       <h2>이건 꼭 알고 투자해야해요!</h2>
 
-      <div class="warn-card">
-        <span class="warn-tag">레버리지 ETF, 항상 2배일까요?</span>
-
-        <p class="warn-title">레버리지, 항상 2배는 아니에요</p>
-        <p class="warn-desc">하루 수익률 기준으로만 2배를 따라가요.</p>
+      <div v-if="etf.hiddenInsight" class="warn-card">
+        <p class="warn-title">{{ etf.hiddenInsight.summary }}</p>
+        <p class="warn-desc">{{ etf.hiddenInsight.body }}</p>
       </div>
 
       <button type="button" class="warn-cta" @click="openUnderstandModal">
@@ -293,14 +333,11 @@ function scrollRecoNext() {
         목적의 구조 분석 결과입니다.
       </p>
 
-      <div class="source-box">
+      <div v-if="hiddenInsightEvidence" class="source-box">
         <p class="source-label">*상품설명서(투자설명서) 근거 원문</p>
-        <p class="source-text">
-          "본 투자신탁은 기초지수의 일별수익률의 2배수의 수익률을 추적하는 것을
-          기본 투자목적으로 하고 있습니다. 이때 하루가 아닌 2영업일 이상의
-          투자기간에 걸쳐 실현되는 실제 누적수익률은 동 기간 내 기초지수의
-          누적수익률의 정확히 2배 수익률과 크게 괴리되거나 반대 방향을 나타낼 수
-          있습니다."
+        <p class="source-text">"{{ hiddenInsightEvidence.quote }}"</p>
+        <p v-if="hiddenInsightEvidence.quoteOriginal" class="source-text source-text-original">
+          "{{ hiddenInsightEvidence.quoteOriginal }}"
         </p>
       </div>
     </section>
@@ -308,30 +345,17 @@ function scrollRecoNext() {
     <section class="reco-section">
       <h2>다른 ETF 상품도 살펴보세요!</h2>
 
-      <div class="reco-carousel">
-        <div ref="recoTrack" class="reco-grid">
-          <div v-for="(r, i) in recommended" :key="i" class="reco-item">
-            <ProductCard :brand="r.brand" />
-          </div>
+      <div class="reco-grid">
+        <div v-for="item in recommended" :key="item.code" class="reco-item">
+          <ProductCard
+            :brand="brandFor(item.manager)"
+            :code="item.code"
+            :name="item.name"
+            :manager="item.manager"
+            :disabled="!item.ready"
+            @open="openEtf(item.code)"
+          />
         </div>
-
-        <button
-          type="button"
-          class="reco-next"
-          aria-label="다음 상품 보기"
-          @click="scrollRecoNext"
-        >
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2.4"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <path d="m9 6 6 6-6 6" />
-          </svg>
-        </button>
       </div>
     </section>
 
@@ -340,8 +364,8 @@ function scrollRecoNext() {
       stage="s4"
       :suggestions="chatSuggestions"
       :disabled="showUnderstandModal"
-      @retry="emit('retry')"
-      @view-products="emit('back')"
+      @retry="router.push({ name: 'questions' })"
+      @view-products="router.push({ name: 'search' })"
     />
 
     <Transition name="modal-fade">
@@ -371,6 +395,7 @@ function scrollRecoNext() {
         </div>
       </div>
     </Transition>
+    </template>
   </div>
 </template>
 
@@ -379,18 +404,8 @@ function scrollRecoNext() {
   position: relative;
   min-height: 100svh;
   box-sizing: border-box;
-  padding: clamp(24px, 2.4vw, 40px) clamp(28px, 5vw, 80px) 60px;
-  background: linear-gradient(
-    180deg,
-    var(--color-bg-page-deep) 0%,
-    var(--color-bg-page-mid) 30%,
-    var(--color-bg-page) 100%
-  );
-}
-
-.top-bar {
-  display: flex;
-  align-items: center;
+  padding: 24px 48px 80px;
+  background: linear-gradient(180deg, #09101a 0%, #2f4c76 100%);
 }
 
 .badges {
@@ -400,9 +415,13 @@ function scrollRecoNext() {
 }
 
 .back-btn {
-  margin-top: 18px;
-  width: 32px;
-  height: 32px;
+  position: absolute;
+  top: 126px;
+  left: 48px;
+  z-index: 5;
+
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
   border: none;
   background: var(--color-surface-subtle);
@@ -415,12 +434,12 @@ function scrollRecoNext() {
 }
 
 .back-btn svg {
-  width: 16px;
-  height: 16px;
+  width: 24px;
+  height: 24px;
 }
 
 section {
-  max-width: 920px;
+  max-width: 1105px;
   margin: 0 auto;
 }
 
@@ -430,26 +449,35 @@ section {
 
 .hero-section {
   text-align: center;
-  padding-top: clamp(28px, 2.6vw, 44px);
+  /* 헤더가 absolute로 빠지면서 사라진 문서 흐름상의 높이(약 32px)를
+     보정 — 헤더 도입 전과 같은 시각적 여백을 유지한다. */
+  padding-top: 158px;
 }
 
 .hero-section h1 {
   margin: 0;
   color: #fff;
-  font-size: clamp(20px, 2vw, 30px);
-  font-weight: 700;
+  font-size: 32px;
+  font-weight: 600;
+  line-height: 1.4;
+  letter-spacing: -0.96px;
 }
 
 .issuer {
-  margin: 6px 0 0;
-  color: #4da3ff;
-  font-size: clamp(13px, 1vw, 16px);
+  margin: 4px 0 0;
+  color: #66c2ff;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.4;
+  letter-spacing: -0.54px;
 }
 
 .promo-banner {
-  margin-top: clamp(20px, 2vw, 32px);
-  padding: clamp(28px, 3vw, 48px);
-  border-radius: 20px;
+  width: min(100%, 1063px);
+  height: 237px;
+  margin: 44px auto 0;
+  padding: 0;
+  border-radius: 30px;
   background: linear-gradient(180deg, #fff8f2 0%, #ffb37a 60%, #ff8a3d 100%);
   display: flex;
   align-items: center;
@@ -457,8 +485,23 @@ section {
 }
 
 .promo-logo {
-  width: clamp(180px, 18vw, 280px);
+  width: 280px;
   height: auto;
+}
+
+.promo-fallback {
+  font-size: clamp(28px, 3vw, 44px);
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  color: #fff;
+}
+
+.state-text {
+  max-width: 920px;
+  margin: 80px auto;
+  text-align: center;
+  color: var(--color-fg-muted);
+  font-size: clamp(14px, 1.1vw, 18px);
 }
 
 /* ==================================================
@@ -466,15 +509,17 @@ section {
 ================================================== */
 
 .name-section {
-  margin-top: clamp(120px, 11vw, 170px);
+  margin-top: 245px;
 }
 
 .name-section h2 {
-  margin: 0 0 clamp(20px, 2vw, 30px);
-  color: #fff;
-  font-size: clamp(17px, 1.5vw, 22px);
-  font-weight: 700;
-  text-align: center;
+  margin: 0 0 50px;
+  color: #f2f2f2;
+  font-size: 30px;
+  font-weight: 600;
+  line-height: 1.4;
+  letter-spacing: -0.9px;
+  text-align: left;
 }
 
 .name-breakdown {
@@ -505,7 +550,7 @@ section {
   z-index: 1;
   display: flex;
   flex-direction: column;
-  gap: clamp(14px, 1.5vw, 22px);
+  gap: clamp(15px, 1.6vw, 24px);
 }
 
 .term-item {
@@ -515,32 +560,38 @@ section {
 
 .term-label {
   display: block;
-  color: #5b667e;
-  font-size: clamp(16px, 1.5vw, 21px);
+  color: #b6b6b6;
+  font-size: 28px;
   font-weight: 600;
+  line-height: 1.4;
+  letter-spacing: -0.03em;
   transition: color 0.2s ease;
 }
 
 .term-item.active .term-label {
   color: #fff;
-  font-size: clamp(22px, 2.2vw, 32px);
-  font-weight: 800;
+  font-size: 28px;
+  font-weight: 600;
 }
 
 .term-phrase {
   display: block;
-  margin-top: 6px;
-  color: #4da3ff;
-  font-size: clamp(13px, 1vw, 16px);
+  margin-top: 4px;
+  color: #1aa7ff;
+  font-size: 18px;
   font-weight: 600;
+  line-height: 1.4;
+  letter-spacing: -0.03em;
 }
 
 .term-detail {
-  margin: 8px 0 0;
-  color: #8891a6;
-  font-size: clamp(12px, 0.95vw, 15px);
-  line-height: 1.6;
-  max-width: 380px;
+  margin: 12px 0 0;
+  color: #e7e7e7;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.4;
+  letter-spacing: -0.03em;
+  max-width: 435px;
 }
 
 .phrase-col {
@@ -550,24 +601,23 @@ section {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: clamp(14px, 1.6vw, 24px);
+  gap: clamp(17px, 1.9vw, 29px);
 }
 
 .phrase {
   margin: 0;
   cursor: pointer;
-  color: #4a5468;
-  font-size: clamp(15px, 1.5vw, 22px);
-  font-weight: 500;
+  color: #4f6f84;
+  font-size: 32px;
+  font-weight: 600;
+  line-height: 1.4;
+  letter-spacing: -0.03em;
   text-align: center;
-  transition:
-    color 0.2s ease,
-    font-weight 0.2s ease;
+  transition: color 0.2s ease;
 }
 
 .phrase.active {
-  color: #4da3ff;
-  font-weight: 700;
+  color: #60c2ff;
 }
 
 /* ==================================================
@@ -575,26 +625,30 @@ section {
 ================================================== */
 
 .qa-section {
-  margin-top: clamp(120px, 11vw, 170px);
+  margin-top: 190px;
 }
 
 .qa-section h2 {
-  margin: 0 0 clamp(20px, 2vw, 30px);
+  margin: 0 0 30px;
   color: #fff;
-  font-size: clamp(17px, 1.5vw, 22px);
-  font-weight: 700;
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 1.4;
+  letter-spacing: -0.72px;
   text-align: center;
 }
 
 .qa-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: clamp(14px, 1.4vw, 22px);
+  gap: 20px;
 }
 
 .qa-card {
-  padding: clamp(16px, 1.6vw, 24px);
-  border-radius: 16px;
+  min-height: 139px;
+  box-sizing: border-box;
+  padding: 17px 20px 20px;
+  border-radius: 20px;
   background: #fff;
 }
 
@@ -631,15 +685,19 @@ section {
 .qa-card h3 {
   margin: 0;
   color: #1a2233;
-  font-size: clamp(14px, 1.15vw, 18px);
-  font-weight: 700;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.4;
+  letter-spacing: -0.54px;
 }
 
 .qa-answer {
   margin: 0;
   color: #2f6fe0;
-  font-size: clamp(14px, 1.1vw, 17px);
-  font-weight: 700;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.4;
+  letter-spacing: -0.54px;
   text-align: right;
   white-space: nowrap;
 }
@@ -662,30 +720,34 @@ section {
 ================================================== */
 
 .warn-section {
-  margin-top: clamp(120px, 11vw, 170px);
+  max-width: 528px;
+  margin-top: 190px;
   text-align: center;
 }
 
 .warn-icon {
-  width: 34px;
+  width: 40.881px;
   height: auto;
   margin: 0 auto;
   margin-bottom: clamp(12px, 1.2vw, 18px);
 }
 
 .warn-section h2 {
-  margin: 10px 0 clamp(20px, 2vw, 30px);
+  margin: 10px 0 60px;
   color: #fff;
-  font-size: clamp(17px, 1.5vw, 22px);
-  font-weight: 700;
+  font-size: 28px;
+  font-weight: 600;
+  line-height: 1.4;
+  letter-spacing: -0.84px;
 }
 
 .warn-card {
-  width: fit-content;
+  width: 319px;
+  min-height: 139px;
   max-width: 100%;
   margin: 0 auto;
   padding: clamp(24px, 2.4vw, 36px);
-  border-radius: 18px;
+  border-radius: 20px;
   background: #fff;
   display: flex;
   flex-direction: column;
@@ -716,14 +778,18 @@ section {
 }
 
 .warn-cta {
-  margin-top: clamp(20px, 2vw, 28px);
-  padding: clamp(12px, 1.1vw, 16px) clamp(26px, 2.4vw, 38px);
+  min-height: 42px;
+  margin-top: 28px;
+  padding: 10px 20px;
   border: none;
   border-radius: 999px;
-  background: #3b82f6;
+  background: linear-gradient(180deg, #0099ff 0%, #0088e2 100%);
   color: #fff;
-  font-size: clamp(13px, 1.05vw, 16px);
-  font-weight: 700;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.4;
+  letter-spacing: -0.48px;
+  box-shadow: 0 0 5px #1a3a6a;
   cursor: pointer;
   transition: background 0.2s ease;
 }
@@ -757,79 +823,34 @@ section {
   line-height: 1.7;
 }
 
+.source-text-original {
+  margin-top: 6px;
+  font-style: italic;
+  color: #454e60;
+}
+
 /* ==================================================
    추천 상품
 ================================================== */
 
 .reco-section {
-  margin-top: clamp(120px, 11vw, 170px);
+  max-width: 1068px;
+  margin-top: 190px;
 }
 
 .reco-section h2 {
-  margin: 0 0 16px;
+  margin: 0 0 28px;
   color: #dfe3ec;
-  font-size: clamp(15px, 1.2vw, 19px);
+  font-size: 24px;
   font-weight: 600;
-}
-
-.reco-carousel {
-  position: relative;
+  line-height: 1.4;
+  letter-spacing: -0.72px;
 }
 
 .reco-grid {
-  display: flex;
-  gap: clamp(14px, 1.4vw, 22px);
-  overflow-x: auto;
-  scroll-snap-type: x mandatory;
-  scroll-behavior: smooth;
-  padding-bottom: 4px;
-  scrollbar-width: none;
-}
-
-.reco-grid::-webkit-scrollbar {
-  display: none;
-}
-
-.reco-item {
-  flex: 0 0 auto;
-  width: clamp(160px, 21vw, 220px);
-  scroll-snap-align: start;
-}
-
-.reco-next {
-  position: absolute;
-  top: 50%;
-  right: -18px;
-  transform: translateY(-50%);
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  background: rgba(20, 28, 46, 0.5);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  color: #cfd8ea;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition:
-    background 0.2s ease,
-    border-color 0.2s ease,
-    transform 0.15s ease,
-    color 0.2s ease;
-}
-
-.reco-next svg {
-  width: 18px;
-  height: 18px;
-}
-
-.reco-next:hover {
-  background: rgba(59, 130, 246, 0.16);
-  border-color: rgba(77, 163, 255, 0.4);
-  color: #4da3ff;
-  transform: translateY(-50%) scale(1.06);
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 32px;
 }
 
 @media (max-width: 700px) {
@@ -845,12 +866,8 @@ section {
     grid-template-columns: 1fr;
   }
 
-  .reco-item {
-    width: clamp(140px, 42vw, 200px);
-  }
-
-  .reco-next {
-    right: -8px;
+  .reco-grid {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 
@@ -958,7 +975,7 @@ section {
   position: fixed;
   top: 0;
   left: 0;
-  width: 3px;
+  width: 5px;
   height: 100vh;
   z-index: 999;
   pointer-events: none;
@@ -968,7 +985,7 @@ section {
   position: absolute;
   left: 0;
   width: 100%;
-  background: #3b82f6;
+  background: #0099ff;
   border-radius: 999px;
   transition: top 0.05s linear;
 }

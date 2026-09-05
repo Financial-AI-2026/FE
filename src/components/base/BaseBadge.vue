@@ -2,7 +2,7 @@
 defineProps({
   tone: {
     type: String,
-    default: 'info', // 'info' | 'purple'
+    default: 'info', // 'info' | 'purple' | 'gold'
   },
 })
 </script>
@@ -29,11 +29,32 @@ defineProps({
 }
 
 .base-badge.purple {
-  padding: 6px 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 32px;
+  padding: 0 16px;
   font-size: 12px;
   font-weight: 500;
+  line-height: 1.4;
+  letter-spacing: -0.03em;
   color: var(--color-accent-purple);
   background: var(--color-badge-purple-bg);
-  border: 1px solid var(--color-badge-purple-border);
+  border: none;
+}
+
+.base-badge.gold {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 32px;
+  padding: 0 16px;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.4;
+  letter-spacing: -0.03em;
+  color: #ffed91;
+  background: #756617;
+  border: none;
 }
 </style>
