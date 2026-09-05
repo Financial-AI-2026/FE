@@ -5,9 +5,11 @@ import BaseBadge from "../components/base/BaseBadge.vue";
 import BrandLogo from "../components/base/BrandLogo.vue";
 import ChatWidget from "../components/ChatWidget.vue";
 import docSearchIcon from "../assets/icons/loading-doc-search.png";
+import { useSessionStore } from "../stores/session";
 
 const props = defineProps({ code: { type: String, default: "" } });
 const router = useRouter();
+const session = useSessionStore();
 
 onMounted(() => {
   setTimeout(() => {
@@ -20,10 +22,11 @@ onMounted(() => {
   <div class="loading-page">
     <header class="top-bar">
       <BrandLogo />
-      <!-- <div class="badges">
-        <BaseBadge tone="purple">로그인 불필요</BaseBadge>
-        <BaseBadge tone="purple">개인정보 미수집</BaseBadge>
-      </div> -->
+      <div class="badges">
+        <BaseBadge v-for="label in session.profileBadges" :key="label" tone="gold">
+          {{ label }}
+        </BaseBadge>
+      </div>
     </header>
 
     <div class="content">

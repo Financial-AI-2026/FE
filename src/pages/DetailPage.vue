@@ -217,10 +217,11 @@ function openEtf(code) {
     <header class="top-bar">
       <BrandLogo />
 
-      <!-- <div class="badges">
-        <BaseBadge tone="purple">로그인 불필요</BaseBadge>
-        <BaseBadge tone="purple">개인정보 미수집</BaseBadge>
-      </div> -->
+      <div class="badges">
+        <BaseBadge v-for="label in session.profileBadges" :key="label" tone="gold">
+          {{ label }}
+        </BaseBadge>
+      </div>
     </header>
 
     <button type="button" class="back-btn" @click="router.back()">

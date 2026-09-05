@@ -7,6 +7,23 @@ export const HORIZON_BY_OPTION = ["UNKNOWN", "SHORT", "MID", "LONG"];
 export const PURPOSE_BY_OPTION = ["CAPITAL_GAIN", "INCOME", "GROWTH"];
 export const FUND_NATURE_BY_OPTION = ["SPARE", "PURPOSE"];
 
+// /search 이후 화면 상단에 "선택한 투자성향" 배지로 보여줄 라벨.
+const HORIZON_LABELS = {
+  UNKNOWN: "투자기간 미정",
+  SHORT: "단기투자",
+  MID: "중기투자",
+  LONG: "장기투자",
+};
+const PURPOSE_LABELS = {
+  CAPITAL_GAIN: "시세차익형",
+  INCOME: "정기현금흐름형",
+  GROWTH: "장기성장형",
+};
+const FUND_NATURE_LABELS = {
+  SPARE: "여유자금",
+  PURPOSE: "목적자금",
+};
+
 export const useSessionStore = defineStore("session", {
   state: () => ({
     horizon: null, // "SHORT" | "MID" | "LONG" | "UNKNOWN"
@@ -24,6 +41,13 @@ export const useSessionStore = defineStore("session", {
       purpose: state.purpose,
       fundNature: state.fundNature,
     }),
+    /** 선택한 투자성향 3가지를 배지에 뿌릴 라벨 배열로. 미선택 항목은 건너뛴다. */
+    profileBadges: (state) =>
+      [
+        HORIZON_LABELS[state.horizon],
+        PURPOSE_LABELS[state.purpose],
+        FUND_NATURE_LABELS[state.fundNature],
+      ].filter(Boolean),
   },
   actions: {
     /** QuestionIntroPage의 `answers`(스텝 인덱스 → 선택 옵션 인덱스)를 받아 저장. */

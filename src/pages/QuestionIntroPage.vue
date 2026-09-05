@@ -1,7 +1,7 @@
 <script setup>
 import { ref, reactive, computed } from "vue";
 import { useRouter } from "vue-router";
-import searchDocumentIcon from "../assets/icons/icon-search-document.png";
+import searchDocumentIcon from "../assets/icons/icon-note-document.png";
 import BrandLogo from "../components/base/BrandLogo.vue";
 import { useSessionStore } from "../stores/session";
 
@@ -77,7 +77,6 @@ function prev() {
     step.value -= 1;
   }
 }
-
 </script>
 
 <template>
@@ -185,9 +184,9 @@ function prev() {
           </button>
 
           <button
+            v-if="answers[step] !== undefined"
             type="button"
             class="btn primary"
-            :disabled="answers[step] === undefined"
             @click="next"
           >
             다음으로

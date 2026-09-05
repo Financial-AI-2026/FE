@@ -4,8 +4,10 @@ import { useRouter } from "vue-router";
 import ProductCard from "../components/ProductCard.vue";
 import BaseBadge from "../components/base/BaseBadge.vue";
 import BrandLogo from "../components/base/BrandLogo.vue";
+import { useSessionStore } from "../stores/session";
 
 const router = useRouter();
+const session = useSessionStore();
 
 const query = ref("");
 
@@ -24,24 +26,12 @@ const analyzedOnly = ref(false);
 <template>
   <div class="search-page">
     <header class="top-bar">
-      <button type="button" class="back-btn" @click="router.back()">
-        <svg
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2.2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-        >
-          <path d="M15 18 9 12l6-6" />
-        </svg>
-      </button>
-
       <BrandLogo />
 
       <div class="badges">
-        <BaseBadge tone="purple">로그인 불필요</BaseBadge>
-        <BaseBadge tone="purple">개인정보 미수집</BaseBadge>
+        <BaseBadge v-for="label in session.profileBadges" :key="label" tone="gold">
+          {{ label }}
+        </BaseBadge>
       </div>
     </header>
 
@@ -124,25 +114,6 @@ const analyzedOnly = ref(false);
   display: flex;
   align-items: center;
   gap: 14px;
-}
-
-.back-btn {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  border: none;
-  background: var(--color-surface-subtle);
-  color: #cfd8ea;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  flex-shrink: 0;
-}
-
-.back-btn svg {
-  width: 16px;
-  height: 16px;
 }
 
 .badges {

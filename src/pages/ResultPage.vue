@@ -6,9 +6,11 @@ import BaseBadge from "../components/base/BaseBadge.vue";
 import ChatWidget from "../components/ChatWidget.vue";
 import BrandLogo from "../components/base/BrandLogo.vue";
 import DiagnosticWidget from "../components/DiagnosticWidget.vue";
+import { useSessionStore } from "../stores/session";
 
 defineProps({ code: { type: String, default: "" } });
 const router = useRouter();
+const session = useSessionStore();
 
 // S6(진단 결과) 공통 추천 칩 — 종목/조건과 무관하게 동일하게 노출.
 const chatSuggestions = [
@@ -82,8 +84,9 @@ onUnmounted(() => {
       <BrandLogo />
 
       <div class="badges">
-        <!-- <BaseBadge tone="purple">로그인 불필요</BaseBadge>
-        <BaseBadge tone="purple">개인정보 미수집</BaseBadge> -->
+        <BaseBadge v-for="label in session.profileBadges" :key="label" tone="gold">
+          {{ label }}
+        </BaseBadge>
       </div>
     </header>
 
