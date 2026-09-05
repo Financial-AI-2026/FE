@@ -97,15 +97,6 @@ const heroLogo = computed(() => HERO_LOGO_BY_CODE[props.code] ?? null);
 const showUnderstandModal = ref(false);
 const chatWidgetRef = ref(null);
 
-// S4(이름 해독) 단계 추천 칩 — 실제 이 상품의 이름 토큰에서 뽑는다
-// (문구는 창작하지 않는다: 토큰 원문 그대로 "~가 뭐예요?" 템플릿에만 끼운다).
-const chatSuggestions = computed(() => {
-  const texts = (etf.value?.tokens ?? [])
-    .map((token) => token.text)
-    .filter((text) => Boolean(text) && text.length <= 8);
-  return texts.slice(0, 3).map((text) => `${text}가 뭐예요?`);
-});
-
 const scrollbar = reactive({ heightPct: 100, topPct: 0 });
 
 function updateScrollbar() {
@@ -378,7 +369,10 @@ function openEtf(code) {
     <ChatWidget
       ref="chatWidgetRef"
       stage="s4"
-      :suggestions="chatSuggestions"
+      :product-code="props.code"
+      :horizon="session.horizon"
+      :purpose="session.purpose"
+      :fund-nature="session.fundNature"
       :disabled="showUnderstandModal"
       @retry="router.push({ name: 'questions' })"
       @view-products="router.push({ name: 'search' })"

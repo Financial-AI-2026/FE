@@ -13,13 +13,6 @@ const props = defineProps({ code: { type: String, required: true } });
 const router = useRouter();
 const session = useSessionStore();
 
-// S6(진단 결과) 공통 추천 칩 — 종목/조건과 무관하게 동일하게 노출.
-const chatSuggestions = [
-  "이 상품, 제 조건에 맞나요?",
-  "왜 이런 결과가 나왔나요?",
-  "매수 전에 뭘 더 확인해야 하나요?",
-];
-
 const diagnosis = ref(null);
 const loading = ref(true);
 const errorMessage = ref(null);
@@ -264,7 +257,10 @@ onUnmounted(() => {
 
     <ChatWidget
       stage="s6"
-      :suggestions="chatSuggestions"
+      :product-code="props.code"
+      :horizon="session.horizon"
+      :purpose="session.purpose"
+      :fund-nature="session.fundNature"
       @retry="router.push({ name: 'questions' })"
       @view-products="router.push({ name: 'search' })"
     />
