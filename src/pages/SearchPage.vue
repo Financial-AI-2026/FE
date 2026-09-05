@@ -1,26 +1,137 @@
 <script setup>
-import { ref } from "vue";
+import { ref, computed, watch, onMounted, onBeforeUnmount } from "vue";
 import { useRouter } from "vue-router";
 import ProductCard from "../components/ProductCard.vue";
 import BaseBadge from "../components/base/BaseBadge.vue";
 import PageHeader from "../components/base/PageHeader.vue";
 import { useSessionStore } from "../stores/session";
+import { fetchEtfs, ApiError } from "../api/client";
 
 const router = useRouter();
 const session = useSessionStore();
 
 const query = ref("");
+const analyzedOnly = ref(false);
+const allItems = ref([]); // 현재 검색어 기준 결과 (domestic+overseas 합침)
+const loading = ref(false);
+const errorMessage = ref(null);
 
-// 디자인 데모용 목업 — 실제 검색 API 연동은 아직 붙이지 않음.
-const results = [
-  { code: "069500", brand: "kodex" },
-  { code: "091160", brand: "kodex" },
-  { code: "371460", brand: "kodex" },
-  { code: "GLOBALX01", brand: "globalx" },
-  { code: "133690", brand: "kodex", disabled: true },
+const DEBOUNCE_MS = 300;
+let debounceTimer = null;
+
+// 운용사 매핑이 확실한 MVP 브랜드만 로고를 붙인다 — 나머지(대부분의 확장
+// 유니버스 종목)는 ProductCard가 알아서 로고 없는 기본 배너로 보여준다.
+const BRAND_BY_MANAGER_KEYWORD = [
+  ["미래에셋", "tiger"],
+  ["삼성", "kodex"],
+  ["Global X", "globalx"],
+  ["ProShares", "proshares"],
 ];
 
-const analyzedOnly = ref(false);
+function brandFor(manager) {
+  if (!manager) return "default";
+  const hit = BRAND_BY_MANAGER_KEYWORD.find(([keyword]) => manager.includes(keyword));
+  return hit ? hit[1] : "default";
+}
+
+function combine(response) {
+  return [...(response?.domestic ?? []), ...(response?.overseas ?? [])];
+}
+
+// displayOrder(널 포함) 기준 정렬 — domestic/overseas 두 배열을 합치면서
+// 다시 섞이므로 여기서 한 번 더 맞춘다.
+function sortByDisplayOrder(items) {
+  return [...items].sort((a, b) => {
+    const aOrder = a.displayOrder ?? Infinity;
+    const bOrder = b.displayOrder ?? Infinity;
+    if (aOrder !== bOrder) return aOrder - bOrder;
+    return a.code.localeCompare(b.code);
+  });
+}
+
+async function runSearch(q) {
+  loading.value = true;
+  errorMessage.value = null;
+  try {
+    const response = await fetchEtfs(q || undefined);
+    allItems.value = sortByDisplayOrder(combine(response));
+  } catch (err) {
+    errorMessage.value =
+      err instanceof ApiError ? err.message : "검색 결과를 불러오지 못했습니다.";
+    allItems.value = [];
+  } finally {
+    loading.value = false;
+  }
+}
+
+// 검색어가 비어 있을 때는 "고정 8개 카드"만 노출한다 — 백엔드 API는 필터
+// 없이 전체 유니버스를 열어두고(docs/13 §5 결정), 8개 고정 노출은 FE에서
+// displayOrder 상위 8개만 골라 보여주는 방식으로 분리했다.
+//
+// `renderLimit`으로 처음엔 적게만 그리는 이유: `allItems`는 디바운스가
+// 끝나기 전까지 "이전 검색 결과"(빈 검색어일 땐 전체 유니버스 6천여 건)를
+// 그대로 들고 있다. 캡이 없으면 글자를 치는 순간 그 수천 건을 통째로
+// 렌더링하려다 타이핑 자체가 버벅였다 — 실사용 중 발견된 실제 버그.
+// 서버는 이미 전체 매칭 결과를 다 내려주므로(추가 API 호출 없이) 스크롤이
+// 바닥에 닿을 때마다 `renderLimit`만 늘려서 더 보여준다 — 무한 스크롤.
+const PAGE_SIZE = 40;
+const renderLimit = ref(PAGE_SIZE);
+
+const displayedItems = computed(() => {
+  const trimmed = query.value.trim();
+  if (!trimmed) {
+    return allItems.value.filter((item) => item.displayOrder != null).slice(0, 8);
+  }
+  return allItems.value.slice(0, renderLimit.value);
+});
+
+const visibleItems = computed(() =>
+  analyzedOnly.value
+    ? displayedItems.value.filter((item) => item.ready)
+    : displayedItems.value,
+);
+
+const totalMatchCount = computed(() => allItems.value.length);
+const hasMore = computed(() => query.value.trim() && renderLimit.value < allItems.value.length);
+
+function loadMore() {
+  renderLimit.value += PAGE_SIZE;
+}
+
+watch(query, (value) => {
+  loading.value = true; // 디바운스 대기 중에도 "검색 중"으로 보이게 — 이전 건수가 잠깐 남아 헷갈리는 것 방지
+  renderLimit.value = PAGE_SIZE; // 새 검색이면 스크롤로 늘려온 개수를 리셋
+  clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(() => runSearch(value.trim()), DEBOUNCE_MS);
+});
+
+const loadMoreSentinel = ref(null);
+let loadMoreObserver = null;
+
+function observeLoadMore() {
+  if (loadMoreObserver) loadMoreObserver.disconnect();
+  if (!loadMoreSentinel.value) return;
+  loadMoreObserver = new IntersectionObserver(
+    (entries) => {
+      if (entries[0]?.isIntersecting && hasMore.value) loadMore();
+    },
+    { rootMargin: "600px 0px" }, // 바닥에 닿기 전에 미리 불러와 스크롤이 끊기지 않게
+  );
+  loadMoreObserver.observe(loadMoreSentinel.value);
+}
+
+onMounted(() => {
+  runSearch("");
+  observeLoadMore();
+});
+onBeforeUnmount(() => {
+  clearTimeout(debounceTimer);
+  loadMoreObserver?.disconnect();
+});
+
+function openEtf(code) {
+  router.push({ name: "detail", params: { code } });
+}
 </script>
 
 <template>
@@ -57,7 +168,10 @@ const analyzedOnly = ref(false);
     </div>
 
     <div class="result-bar">
-      <span class="count">검색 결과 총 {{ results.length }}건</span>
+      <span class="count">
+        <template v-if="loading">검색 중…</template>
+        <template v-else>검색 결과 총 {{ totalMatchCount }}건</template>
+      </span>
       <button
         type="button"
         class="toggle"
@@ -78,15 +192,25 @@ const analyzedOnly = ref(false);
       </button>
     </div>
 
+    <p v-if="errorMessage" class="error-text">{{ errorMessage }}</p>
+
     <div class="results">
       <ProductCard
-        v-for="(r, i) in results"
-        :key="i"
-        :brand="r.brand"
-        :disabled="r.disabled"
-        @open="router.push({ name: 'detail', params: { code: r.code } })"
+        v-for="item in visibleItems"
+        :key="item.code"
+        :brand="brandFor(item.manager)"
+        :code="item.code"
+        :name="item.name"
+        :manager="item.manager"
+        :disabled="!item.ready"
+        @open="openEtf(item.code)"
       />
     </div>
+
+    <!-- 무한 스크롤 트리거 — 화면에 아무 문구도 안 띄우고, 바닥 근처에
+         닿으면 조용히 더 불러온다(이미 fetch된 목록에서 더 그리는 것뿐이라
+         추가 API 호출은 없음). -->
+    <div ref="loadMoreSentinel" class="load-more-sentinel" aria-hidden="true" />
   </div>
 </template>
 
@@ -189,6 +313,13 @@ h1 {
   color: #f2f2f2;
 }
 
+.error-text {
+  max-width: 1040px;
+  margin: 0 auto 16px;
+  color: var(--color-accent-danger, #e5484d);
+  font-size: 14px;
+}
+
 .toggle {
   display: flex;
   align-items: center;
@@ -219,6 +350,10 @@ h1 {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 32px;
+}
+
+.load-more-sentinel {
+  height: 1px;
 }
 
 @media (max-width: 700px) {

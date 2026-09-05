@@ -1,14 +1,14 @@
 <script setup>
-import { ref, onMounted, onUnmounted } from "vue";
+import { ref, computed, watch, onMounted, onUnmounted, nextTick } from "vue";
 import { useRouter } from "vue-router";
 import ProductCard from "../components/ProductCard.vue";
 import BaseBadge from "../components/base/BaseBadge.vue";
 import ChatWidget from "../components/ChatWidget.vue";
 import PageHeader from "../components/base/PageHeader.vue";
-import DiagnosticWidget from "../components/DiagnosticWidget.vue";
+import { fetchEtfDiagnosis, fetchEtfs, fetchEtfsByCodes, ApiError } from "../api/client";
 import { useSessionStore } from "../stores/session";
 
-defineProps({ code: { type: String, default: "" } });
+const props = defineProps({ code: { type: String, required: true } });
 const router = useRouter();
 const session = useSessionStore();
 
@@ -19,46 +19,104 @@ const chatSuggestions = [
   "매수 전에 뭘 더 확인해야 하나요?",
 ];
 
-const productName = "TIGER 미국S&P500레버리지(합성 H)";
-const simulationWidgetType = "A";
+const diagnosis = ref(null);
+const loading = ref(true);
+const errorMessage = ref(null);
+const recommended = ref([]);
 
-const points = [
-  {
-    tag: "주식을 직접 사지 않고 증권사와 약속만 했어요",
-    desc: "주식 대신 증권사와 계약해 수익을 받는 ETF입니다.\n증권사에 문제가 생기면 투자에도 영향을 줄 수 있어요.",
-  },
-  {
-    tag: "환율이 오르내려도 크게 상관없어요",
-    desc: "환율이 바뀌어도 영향을 덜 받도록 막아줘요!\n대신 이를 위한 비용이 들어요.",
-  },
+const BRAND_BY_MANAGER_KEYWORD = [
+  ["미래에셋", "tiger"],
+  ["삼성", "kodex"],
+  ["Global X", "globalx"],
+  ["ProShares", "proshares"],
 ];
 
-// 디자인 데모용 목업 — 실제 검색 API 연동은 아직 붙이지 않음.
-const recommended = [
-  { code: "069500", brand: "kodex" },
-  { code: "091160", brand: "kodex" },
-  { code: "371460", brand: "kodex" },
-  { code: "GLOBALX01", brand: "globalx" },
-  { code: "133690", brand: "kodex" },
-  { code: "195930", brand: "kodex" },
-  { code: "GLOBALX02", brand: "globalx" },
-  { code: "310970", brand: "kodex" },
-];
-
-const recoTrack = ref(null);
-
-function scrollRecoNext() {
-  const el = recoTrack.value;
-  if (!el) return;
-  const amount = el.clientWidth * 0.8;
-  const atEnd = el.scrollLeft + el.clientWidth >= el.scrollWidth - 4;
-  el.scrollTo({ left: atEnd ? 0 : el.scrollLeft + amount, behavior: "smooth" });
+function brandFor(manager) {
+  if (!manager) return "default";
+  const hit = BRAND_BY_MANAGER_KEYWORD.find(([keyword]) => manager.includes(keyword));
+  return hit ? hit[1] : "default";
 }
+
+function openEtf(code) {
+  router.push({ name: "detail", params: { code } });
+}
+
+// warningsVisible만큼만 노출 (F-S6-02 "경고 카드 정렬·최대 2개 노출") — 각
+// 경고는 hero+sim 블록을 하나씩 갖는다. "이런 점도 있어요!"는 별개로
+// `infos[]`(경고까지는 아닌 참고 정보) 자리다 — 애초에 이 화면 mock의
+// points 문구("주식을 직접 사지 않고 증권사와 약속만 했어요" 등)가 실제
+// `I-SYN-01`/`I-FXH-01` info 규칙 문구와 그대로 일치해서 확인됨(2번째
+// warning 카드가 아니었다). infos는 warnings 유무와 무관하게 내려올 수
+// 있어 두 갈래(경고 있음/없음) 어느 쪽에서도 노출한다.
+const visibleWarnings = computed(() =>
+  (diagnosis.value?.warnings ?? []).slice(0, diagnosis.value?.warningsVisible ?? 0),
+);
+const heroWarning = computed(() => visibleWarnings.value[0] ?? null);
+const heroEvidence = computed(() => heroWarning.value?.evidence?.[0] ?? null);
+const infoCards = computed(() => diagnosis.value?.infos ?? []);
+
+async function loadDiagnosis(code) {
+  loading.value = true;
+  errorMessage.value = null;
+  try {
+    diagnosis.value = await fetchEtfDiagnosis(code, session.conditionParams);
+  } catch (err) {
+    diagnosis.value = null;
+    errorMessage.value =
+      err instanceof ApiError ? err.message : "진단 결과를 불러오지 못했습니다.";
+  } finally {
+    loading.value = false;
+    // reveal 애니메이션 대상(v-if로 늦게 나타난 요소)이 자리 잡은 다음 관찰 시작.
+    nextTick(observeReveals);
+  }
+}
+
+async function loadRecommended(excludeCode) {
+  try {
+    // 이전에 조회했던(클릭해서 들어가본) 종목을 앞에 두고, 모자란 자리는 고정
+    // 8종으로 채운다 — 조회 이력이 1~2개뿐일 때 목록이 확 줄어들지 않게.
+    const viewedCodes = session.viewedCodes.filter((code) => code !== excludeCode);
+    const [viewedItems, response] = await Promise.all([
+      viewedCodes.length > 0 ? fetchEtfsByCodes(viewedCodes) : Promise.resolve([]),
+      fetchEtfs(),
+    ]);
+    const fallbackItems = [...(response?.domestic ?? []), ...(response?.overseas ?? [])]
+      .filter((item) => item.displayOrder != null && item.code !== excludeCode)
+      .sort((a, b) => a.displayOrder - b.displayOrder);
+
+    const seen = new Set();
+    const merged = [];
+    for (const item of [...viewedItems, ...fallbackItems]) {
+      if (seen.has(item.code)) continue;
+      seen.add(item.code);
+      merged.push(item);
+    }
+    recommended.value = merged;
+  } catch {
+    recommended.value = [];
+  }
+}
+
+watch(
+  () => props.code,
+  (code) => {
+    if (!code) return;
+    if (!session.hasConditions) {
+      router.replace({ name: "questions" });
+      return;
+    }
+    loadDiagnosis(code);
+    loadRecommended(code);
+  },
+  { immediate: true },
+);
+
 
 let observer = null;
 
-onMounted(() => {
-  const els = document.querySelectorAll(".reveal");
+function observeReveals() {
+  if (observer) observer.disconnect();
+  const els = document.querySelectorAll(".reveal:not(.in-view)");
   observer = new IntersectionObserver(
     (entries) => {
       entries.forEach((entry) => {
@@ -71,6 +129,10 @@ onMounted(() => {
     { threshold: 0.15, rootMargin: "0px 0px -60px 0px" },
   );
   els.forEach((el) => observer.observe(el));
+}
+
+onMounted(() => {
+  observeReveals();
 });
 
 onUnmounted(() => {
@@ -101,40 +163,76 @@ onUnmounted(() => {
       </svg>
     </button>
 
-    <section class="hero-section">
-      <h1 class="reveal">
-        <span class="hl">오래 들고 있으면 손해 볼 수 있어요</span>
-      </h1>
+    <p v-if="loading" class="state-text">불러오는 중…</p>
+    <p v-else-if="errorMessage" class="state-text">{{ errorMessage }}</p>
 
-      <p class="hero-sub reveal">
-        이 상품은 하루 기준으로 2배를 따라가도록 매일 다시
-        계산(리밸런싱)합니다.<br class="sub-break" />
-        오르내림이 반복되면 5년 뒤에는 따라가는 지수(기초지수)가 제자리여도
-        원금이 줄어들 수 있습니다.
-      </p>
-    </section>
+    <template v-else-if="diagnosis">
+      <section class="hero-section">
+        <h1 class="reveal">
+          <span class="hl">{{ diagnosis.banner.text }}</span>
+        </h1>
+        <p class="hero-sub reveal">{{ diagnosis.banner.subtext }}</p>
 
-    <section class="sim-section">
-      <h2 class="reveal">이 상품에 100만원을 넣었다면 어떻게 됐을까요?</h2>
+        <!-- 종합 멘트 — 발동된 경고 전체를 문장으로 (아래 sim-section 카드는 최대
+             2개만 보여주는 것과 다르다, [최종]진단결과_종합멘트.md 참고). -->
+        <ul v-if="diagnosis.banner.sentences.length" class="composite-sentences reveal">
+          <li v-for="(sentence, i) in diagnosis.banner.sentences" :key="i">{{ sentence }}</li>
+        </ul>
+        <p v-if="diagnosis.banner.sentences.length" class="composite-closing reveal">
+          {{ diagnosis.banner.note }}
+        </p>
+      </section>
 
-      <DiagnosticWidget class="reveal" :type="simulationWidgetType" />
+      <template v-if="heroWarning">
+        <!-- warningsVisible만큼(최대 2개, F-S6-02) 각자 hero+sim 블록 하나씩 -->
+        <section v-for="w in visibleWarnings" :key="w.code" class="sim-section">
+          <h2 class="reveal">{{ w.title || w.summary }}</h2>
+          <div class="sim-box reveal">{{ w.body }}</div>
+          <p v-if="w.widget" class="sim-desc reveal">{{ w.widget.disclaimer }}</p>
+        </section>
 
-      <p class="sim-desc reveal">
-        따라가는 지수는 제자리인데, 이 상품은 18만원이 사라졌습니다.<br />
-        오르내림이 반복될수록 차이가 커집니다.
-      </p>
-    </section>
-
-    <section class="also-section">
-      <div class="also-icon reveal">!</div>
-      <h2 class="reveal">이런 점도 있어요!</h2>
-
-      <div class="also-cards">
-        <div v-for="p in points" :key="p.tag" class="also-card reveal">
-          <span class="also-tag">{{ p.tag }}</span>
-          <p class="also-desc">{{ p.desc }}</p>
+        <div v-if="heroEvidence" class="source-box reveal">
+          <p class="source-label">*상품설명서(투자설명서) 근거 원문</p>
+          <p class="source-text">"{{ heroEvidence.quote }}"</p>
+          <p v-if="heroEvidence.quoteOriginal" class="source-text source-text-original">
+            "{{ heroEvidence.quoteOriginal }}"
+          </p>
         </div>
-      </div>
+      </template>
+
+      <section v-else class="also-section">
+        <div class="also-icon reveal">✓</div>
+        <h2 class="reveal">{{ diagnosis.banner.note }}</h2>
+
+        <div v-if="diagnosis.checklist" class="also-cards">
+          <div
+            v-for="item in diagnosis.checklist.items"
+            :key="item.rule"
+            class="also-card reveal"
+          >
+            <span class="also-tag">{{ item.label }}</span>
+            <p class="also-desc">{{ item.value }}</p>
+          </div>
+        </div>
+
+        <ul v-if="diagnosis.checklist" class="general-risks reveal">
+          <li v-for="risk in diagnosis.checklist.generalRisks" :key="risk">{{ risk }}</li>
+        </ul>
+      </section>
+
+      <!-- infos[] — 경고까진 아니지만 알아두면 좋은 정보. warnings 유무와
+           무관하게 내려올 수 있어 위 두 갈래와 별개로 노출한다. -->
+      <section v-if="infoCards.length" class="also-section">
+        <div class="also-icon reveal">!</div>
+        <h2 class="reveal">이런 점도 있어요!</h2>
+
+        <div class="also-cards">
+          <div v-for="info in infoCards" :key="info.code" class="also-card reveal">
+            <span class="also-tag">{{ info.summary }}</span>
+            <p class="also-desc">{{ info.body }}</p>
+          </div>
+        </div>
+      </section>
 
       <button
         type="button"
@@ -144,48 +242,23 @@ onUnmounted(() => {
         조건 수정해서 다시 진단받기
       </button>
 
-      <div class="source-box reveal">
-        <p class="source-label">*상품설명서(투자설명서) 근거 원문</p>
-        <p class="source-text">
-          "기초지수가 일정 기간 후 최초 수준을 회복하더라도, 일별 재산정 구조로
-          인해 펀드의 누적수익률은 최초 수준을 회복하지 못할 수 있습니다."
-        </p>
-      </div>
-    </section>
+      <section class="reco-section reveal">
+        <h2>다른 ETF 상품도 살펴보세요!</h2>
 
-    <section class="reco-section reveal">
-      <h2>다른 ETF 상품도 살펴보세요!</h2>
-
-      <div class="reco-carousel">
-        <div ref="recoTrack" class="reco-grid">
-          <div v-for="(r, i) in recommended" :key="i" class="reco-item">
+        <div class="reco-grid">
+          <div v-for="item in recommended" :key="item.code" class="reco-item">
             <ProductCard
-              :brand="r.brand"
-              :code="r.code"
-              @open="router.push({ name: 'detail', params: { code: r.code } })"
+              :brand="brandFor(item.manager)"
+              :code="item.code"
+              :name="item.name"
+              :manager="item.manager"
+              :disabled="!item.ready"
+              @open="openEtf(item.code)"
             />
           </div>
         </div>
-
-        <button
-          type="button"
-          class="reco-next"
-          aria-label="다음 상품 보기"
-          @click="scrollRecoNext"
-        >
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2.4"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <path d="m9 6 6 6-6 6" />
-          </svg>
-        </button>
-      </div>
-    </section>
+      </section>
+    </template>
 
     <ChatWidget
       stage="s6"
@@ -306,6 +379,32 @@ section {
   line-height: 1.7;
 }
 
+.composite-sentences {
+  width: 100%;
+  max-width: 620px;
+  margin: clamp(16px, 1.6vw, 22px) auto 0;
+  padding: 0 0 0 1.1em;
+  text-align: left;
+  color: #c7cee0;
+  font-size: clamp(13px, 1vw, 15px);
+  line-height: 1.8;
+}
+
+.composite-sentences li + li {
+  margin-top: 8px;
+}
+
+.composite-closing {
+  width: 100%;
+  max-width: 620px;
+  margin: clamp(14px, 1.4vw, 18px) auto 0;
+  padding-top: clamp(14px, 1.4vw, 18px);
+  border-top: 1px solid var(--color-border-subtle-strong);
+  color: #8891a6;
+  font-size: clamp(12px, 0.95vw, 14px);
+  line-height: 1.7;
+}
+
 /* ==================================================
    시뮬레이션
 ================================================== */
@@ -320,6 +419,18 @@ section {
   color: #fff;
   font-size: clamp(16px, 1.4vw, 20px);
   font-weight: 700;
+}
+
+.sim-box {
+  width: 100%;
+  height: clamp(180px, 22vw, 260px);
+  border-radius: 18px;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #9098ab;
+  font-size: clamp(12px, 0.95vw, 14px);
 }
 
 .sim-desc {
@@ -396,6 +507,24 @@ section {
   white-space: pre-line;
 }
 
+.general-risks {
+  max-width: 560px;
+  margin: clamp(20px, 2vw, 32px) auto 0;
+  padding: 0 0 0 1.2em;
+  text-align: left;
+  color: var(--color-fg-muted);
+  font-size: clamp(12px, 0.95vw, 14px);
+  line-height: 1.8;
+}
+
+.state-text {
+  max-width: 920px;
+  margin: 80px auto;
+  text-align: center;
+  color: var(--color-fg-muted);
+  font-size: clamp(14px, 1.1vw, 18px);
+}
+
 .source-box {
   margin-top: clamp(24px, 2.4vw, 36px);
   text-align: left;
@@ -413,6 +542,12 @@ section {
   color: #5b667e;
   font-size: clamp(11px, 0.85vw, 13px);
   line-height: 1.7;
+}
+
+.source-text-original {
+  margin-top: 6px;
+  font-style: italic;
+  color: #454e60;
 }
 
 .retry-btn {
@@ -448,64 +583,10 @@ section {
   font-weight: 600;
 }
 
-.reco-carousel {
-  position: relative;
-}
-
 .reco-grid {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   gap: clamp(14px, 1.4vw, 22px);
-  overflow-x: auto;
-  scroll-snap-type: x mandatory;
-  scroll-behavior: smooth;
-  padding-bottom: 4px;
-  scrollbar-width: none;
-}
-
-.reco-grid::-webkit-scrollbar {
-  display: none;
-}
-
-.reco-item {
-  flex: 0 0 auto;
-  width: clamp(160px, 21vw, 220px);
-  scroll-snap-align: start;
-}
-
-.reco-next {
-  position: absolute;
-  top: 50%;
-  right: -18px;
-  transform: translateY(-50%);
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  background: rgba(20, 28, 46, 0.5);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  color: #cfd8ea;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition:
-    background 0.2s ease,
-    border-color 0.2s ease,
-    transform 0.15s ease,
-    color 0.2s ease;
-}
-
-.reco-next svg {
-  width: 18px;
-  height: 18px;
-}
-
-.reco-next:hover {
-  background: rgba(59, 130, 246, 0.16);
-  border-color: rgba(77, 163, 255, 0.4);
-  color: #4da3ff;
-  transform: translateY(-50%) scale(1.06);
 }
 
 @media (max-width: 700px) {
@@ -526,12 +607,8 @@ section {
     grid-template-columns: 1fr;
   }
 
-  .reco-item {
-    width: clamp(140px, 42vw, 200px);
-  }
-
-  .reco-next {
-    right: -8px;
+  .reco-grid {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 </style>
