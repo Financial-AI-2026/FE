@@ -1,22 +1,71 @@
 <script setup>
-import { ref } from "vue";
+import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import ProductCard from "../components/ProductCard.vue";
 import BaseBadge from "../components/base/BaseBadge.vue";
 import BrandLogo from "../components/base/BrandLogo.vue";
+import { listEtfs } from "../lib/chatApi";
 
 const emit = defineEmits(["back", "open"]);
 
 const query = ref("");
-
-const results = [
-  { brand: "kodex" },
-  { brand: "kodex" },
-  { brand: "kodex" },
-  { brand: "globalx" },
-  { brand: "kodex", disabled: true },
-];
-
 const analyzedOnly = ref(false);
+
+const items = ref([]);
+const loading = ref(false);
+const loadError = ref(false);
+
+// ProductCard.vue엔 이 4개 브랜드의 로고/배너 색만 있어서, 매칭 안 되는 발행사는
+// ProductCard 자체 기본값(kodex 스타일)으로 떨어진다.
+function inferBrand(item) {
+  const name = item.name ?? "";
+  const manager = item.manager ?? "";
+  if (name.startsWith("TIGER")) return "tiger";
+  if (name.startsWith("KODEX")) return "kodex";
+  if (manager.includes("ProShares")) return "proshares";
+  if (manager.includes("Global X")) return "globalx";
+  return undefined;
+}
+
+function toCard(item) {
+  return {
+    code: item.code,
+    name: item.name,
+    issuer: item.manager ?? "",
+    brand: inferBrand(item),
+    ready: item.ready,
+    displayOrder: item.displayOrder ?? 0,
+  };
+}
+
+async function fetchList(q) {
+  loading.value = true;
+  loadError.value = false;
+  try {
+    const res = await listEtfs(q || undefined);
+    items.value = [...res.domestic, ...res.overseas]
+      .sort((a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0))
+      .map(toCard);
+  } catch {
+    items.value = [];
+    loadError.value = true;
+  } finally {
+    loading.value = false;
+  }
+}
+
+const results = computed(() =>
+  analyzedOnly.value ? items.value.filter((i) => i.ready) : items.value,
+);
+
+onMounted(() => fetchList());
+
+let debounceTimer = null;
+watch(query, (q) => {
+  clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(() => fetchList(q), 300);
+});
+
+onUnmounted(() => clearTimeout(debounceTimer));
 </script>
 
 <template>
@@ -88,13 +137,19 @@ const analyzedOnly = ref(false);
       </button>
     </div>
 
-    <div class="results">
+    <p v-if="loading" class="state-msg">불러오는 중이에요...</p>
+    <p v-else-if="loadError" class="state-msg">상품 목록을 불러오지 못했어요. 잠시 후 다시 시도해주세요.</p>
+
+    <div v-else class="results">
       <ProductCard
-        v-for="(r, i) in results"
-        :key="i"
+        v-for="r in results"
+        :key="r.code"
         :brand="r.brand"
-        :disabled="r.disabled"
-        @open="emit('open')"
+        :code="r.code"
+        :name="r.name"
+        :issuer="r.issuer"
+        :disabled="!r.ready"
+        @open="emit('open', r.code)"
       />
     </div>
   </div>
@@ -240,6 +295,14 @@ h1 {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: clamp(16px, 1.6vw, 28px);
+}
+
+.state-msg {
+  max-width: 1040px;
+  margin: 40px auto;
+  text-align: center;
+  color: var(--color-fg-muted);
+  font-size: clamp(13px, 1vw, 16px);
 }
 
 @media (max-width: 700px) {

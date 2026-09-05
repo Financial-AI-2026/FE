@@ -2,6 +2,7 @@
 import { ref, reactive, computed, onMounted } from "vue";
 import searchDocumentIcon from "../assets/icons/icon-search-document.png";
 import BrandLogo from "../components/base/BrandLogo.vue";
+import { setProfileAnswers } from "../lib/sessionState";
 
 const emit = defineEmits(["finish"]);
 
@@ -61,6 +62,7 @@ function next() {
   if (step.value < questions.length - 1) {
     step.value += 1;
   } else {
+    setProfileAnswers(answers);
     emit("finish");
   }
 }

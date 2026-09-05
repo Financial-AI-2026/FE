@@ -4,23 +4,32 @@ import ProductCard from "../components/ProductCard.vue";
 import BaseBadge from "../components/base/BaseBadge.vue";
 import BrandLogo from "../components/base/BrandLogo.vue";
 import ChatWidget from "../components/ChatWidget.vue";
+import { session } from "../lib/sessionState";
 import magnifierIcon from "../assets/icons/icon-search.png";
 import warningIcon from "../assets/icons/warning-triangle.svg";
 import tigerLogo from "../assets/icons/tiger.png";
 
+const props = defineProps({
+  // App.vue가 SearchPage.vue에서 고른 실제 종목 코드를 내려준다.
+  productCode: {
+    type: String,
+    default: "448290", // SearchPage를 거치지 않고 이 페이지에 온 경우를 대비한 안전한 기본값.
+  },
+});
+
 const emit = defineEmits(["back", "diagnose", "retry"]);
 
+// TODO: 아래 이름/이름 해독/Q&A/경고 문구는 전부 "TIGER 미국S&P500레버리지(합성 H)"
+// (실제로는 지원 8종에 없는 이름 — 가장 가까운 건 448290 "TIGER 미국S&P500(H)", 레버리지
+// 아님) 하나에 대해서만 실제 투자설명서를 근거로 작성된 정적 콘텐츠라, props.productCode로
+// 다른 종목을 골라도 이 화면의 설명 내용 자체는 바뀌지 않는다. 종목별 정확한 설명을
+// 새로 쓰는 건 투자설명서 근거가 필요해서 별도 콘텐츠 작업으로 남겨둔다.
+// 챗봇(ChatWidget)에는 아래에서 props.productCode를 그대로 넘기므로, 채팅 답변은
+// 실제로 선택한 종목 기준으로 정확하게 나온다.
 const productName = "TIGER 미국S&P500레버리지(합성 H)";
 
 const showUnderstandModal = ref(false);
 const chatWidgetRef = ref(null);
-
-// S4(이름 해독) 단계 추천 칩 — 이 상품 이름 토큰(레버리지/합성/H) 기준.
-const chatSuggestions = [
-  "레버리지가 뭐예요?",
-  "합성은 무슨 뜻이에요?",
-  "환헤지가 뭔가요?",
-];
 
 const scrollbar = reactive({ heightPct: 100, topPct: 0 });
 
@@ -338,7 +347,10 @@ function scrollRecoNext() {
     <ChatWidget
       ref="chatWidgetRef"
       stage="s4"
-      :suggestions="chatSuggestions"
+      :product-code="productCode"
+      :horizon="session.horizon"
+      :purpose="session.purpose"
+      :fund-nature="session.fundNature"
       :disabled="showUnderstandModal"
       @retry="emit('retry')"
       @view-products="emit('back')"
