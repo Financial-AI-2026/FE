@@ -6,8 +6,8 @@ import DetailPage from "../pages/DetailPage.vue";
 import DetailLoadingPage from "../pages/DetailLoadingPage.vue";
 import ResultPage from "../pages/ResultPage.vue";
 
-// S1~S6 화면 매핑. 기획 문서가 그리던 라우팅 취지를
-// 따르되, 실제 페이지 컴포넌트 이름 기준으로 다시 잡았다 (2026-09 결정).
+// S1~S6 화면 매핑. ctx/docs/06_프론트엔드_화면.md가 그리던 라우팅 취지를
+// 따르되, 실제 페이지 컴포넌트 이름 기준으로 다시 잡았다 (docs/13 §3-3 결정).
 const routes = [
   { path: "/", name: "landing", component: LandingPage },
   { path: "/questions", name: "questions", component: QuestionIntroPage },
