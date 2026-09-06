@@ -6,6 +6,7 @@ import BaseBadge from "../components/base/BaseBadge.vue";
 import PageHeader from "../components/base/PageHeader.vue";
 import { useSessionStore } from "../stores/session";
 import { fetchEtfs, ApiError } from "../api/client";
+import { brandForEtf } from "../constants/etfBrand";
 
 const router = useRouter();
 const session = useSessionStore();
@@ -18,21 +19,6 @@ const errorMessage = ref(null);
 
 const DEBOUNCE_MS = 300;
 let debounceTimer = null;
-
-// 운용사 매핑이 확실한 MVP 브랜드만 로고를 붙인다 — 나머지(대부분의 확장
-// 유니버스 종목)는 ProductCard가 알아서 로고 없는 기본 배너로 보여준다.
-const BRAND_BY_MANAGER_KEYWORD = [
-  ["미래에셋", "tiger"],
-  ["삼성", "kodex"],
-  ["Global X", "globalx"],
-  ["ProShares", "proshares"],
-];
-
-function brandFor(manager) {
-  if (!manager) return "default";
-  const hit = BRAND_BY_MANAGER_KEYWORD.find(([keyword]) => manager.includes(keyword));
-  return hit ? hit[1] : "default";
-}
 
 function combine(response) {
   return [...(response?.domestic ?? []), ...(response?.overseas ?? [])];
@@ -185,7 +171,7 @@ function openEtf(code) {
       <ProductCard
         v-for="item in visibleItems"
         :key="item.code"
-        :brand="brandFor(item.manager)"
+        :brand="brandForEtf(item)"
         :code="item.code"
         :name="item.name"
         :manager="item.manager"

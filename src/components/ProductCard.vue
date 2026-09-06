@@ -1,47 +1,47 @@
 <script setup>
-import { computed } from 'vue'
-import BaseButton from './base/BaseButton.vue'
-import BaseBadge from './base/BaseBadge.vue'
-import kodexLogo from '../assets/icons/kodex.png'
-import tigerLogo from '../assets/icons/tiger.png'
-import prosharesLogo from '../assets/icons/proshares.png'
-import globalxLogo from '../assets/icons/globalx.png'
+import { computed } from "vue";
+import BaseButton from "./base/BaseButton.vue";
+import BaseBadge from "./base/BaseBadge.vue";
+import kodexLogo from "../assets/icons/kodex.png";
+import tigerLogo from "../assets/icons/tiger.png";
+import prosharesLogo from "../assets/icons/proshares.png";
+import globalxLogo from "../assets/icons/globalx.png";
 
 const logos = {
   kodex: kodexLogo,
   tiger: tigerLogo,
   proshares: prosharesLogo,
   globalx: globalxLogo,
-}
+};
 
 const props = defineProps({
   brand: {
     type: String,
-    default: 'default', // 'kodex' | 'tiger' | 'proshares' | 'globalx' | 'default'(로고 없음)
+    default: "default", // 'kodex' | 'tiger' | 'proshares' | 'globalx' | 'default'(로고 없음)
   },
   code: {
     type: String,
-    default: '',
+    default: "",
   },
   name: {
     type: String,
-    default: '금융 상품 이름',
+    default: "금융 상품 이름",
   },
   manager: {
     type: String,
-    default: '',
+    default: "",
   },
   disabled: {
     type: Boolean,
     default: false,
   },
-})
+});
 
 // 로고 이미지가 있는 브랜드는 4개뿐 — 그 외(운용사 정보가 없거나 매핑이 안
 // 되는 대부분의 확장 유니버스 종목)는 로고 없이 코드 이니셜만 보여준다.
-const logoSrc = computed(() => logos[props.brand] ?? null)
+const logoSrc = computed(() => logos[props.brand] ?? null);
 
-defineEmits(['open'])
+defineEmits(["open"]);
 </script>
 
 <template>
@@ -50,13 +50,13 @@ defineEmits(['open'])
 
     <div class="banner" :class="brand">
       <img v-if="logoSrc" :src="logoSrc" :alt="brand" class="brand-logo" />
-      <span v-else class="brand-fallback">{{ code || '?' }}</span>
+      <span v-else class="brand-fallback">{{ code || "?" }}</span>
     </div>
 
     <div class="body">
       <p class="line title">{{ name }}</p>
       <p class="line sub">{{ code }}</p>
-      <p class="line sub">{{ manager || '운용사 확인 중' }}</p>
+      <p class="line sub">{{ manager || "운용사 확인 중" }}</p>
     </div>
 
     <BaseButton
@@ -65,7 +65,14 @@ defineEmits(['open'])
       aria-label="상세 보기"
       @click="$emit('open')"
     >
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
         <path d="M7 7 17 17" />
         <path d="M17 9v8h-8" />
       </svg>
@@ -131,24 +138,23 @@ defineEmits(['open'])
 }
 
 .banner.kodex {
-  background: linear-gradient(135deg, #eaf3ff 0%, #bdd6ff 100%);
+  background: var(--brand-gradient-kodex);
 }
 
 .banner.globalx {
-  background: linear-gradient(135deg, #eafbe9 0%, #bdeec6 100%);
+  background: var(--brand-gradient-globalx);
 }
 
 .banner.tiger {
-  /* DetailPage.vue의 TIGER ETF 배너와 같은 톤으로 맞춤 */
-  background: linear-gradient(135deg, #fff8f2 0%, #ffb37a 100%);
+  background: var(--brand-gradient-tiger);
 }
 
 .banner.proshares {
-  background: linear-gradient(135deg, #f6fff1 0%, #c2ff9f 100%);
+  background: var(--brand-gradient-proshares);
 }
 
 .banner.default {
-  background: linear-gradient(135deg, var(--color-surface-subtle) 0%, var(--color-bg-card) 100%);
+  background: var(--brand-gradient-default);
 }
 
 /* 로고마다 원본 가로세로 비율이 달라서(TIGER/Global X는 옆으로 긴 워드마크,
@@ -193,11 +199,13 @@ defineEmits(['open'])
   max-width: calc(100% - 54px);
 
   color: #ffffff;
-  font-size: 18px;
+  font-size: 17px;
   font-weight: 600;
-  overflow: hidden;
+  /* overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
+  white-space: nowrap; */
+  overflow-wrap: anywhere;
+  white-space: normal;
 }
 
 .line.sub {

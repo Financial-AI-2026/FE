@@ -4,12 +4,14 @@ import { Swiper, SwiperSlide } from "swiper/vue";
 import { Keyboard, Mousewheel } from "swiper/modules";
 import "swiper/css";
 import { useRouter } from "vue-router";
-import ProductCard from "../components/ProductCard.vue";
 import BaseBadge from "../components/base/BaseBadge.vue";
+import BackButton from "../components/base/BackButton.vue";
 import PageHeader from "../components/base/PageHeader.vue";
 import ChatWidget from "../components/ChatWidget.vue";
+import EtfRecommendationSection from "../components/EtfRecommendationSection.vue";
 import magnifierIcon from "../assets/icons/icon-search.png";
 import warningIcon from "../assets/icons/warning-triangle.svg";
+import kodexLogo from "../assets/icons/kodex.png";
 import tigerLogo from "../assets/icons/tiger.png";
 import globalxLogo from "../assets/icons/globalx.png";
 import prosharesLogo from "../assets/icons/proshares.png";
@@ -19,6 +21,12 @@ import {
   fetchEtfsByCodes,
   ApiError,
 } from "../api/client";
+import {
+  fullpageKeyboardOptions,
+  fullpageMousewheelOptions,
+  fullpageSwiperSpeed,
+} from "../constants/swiperOptions";
+import { brandForEtf } from "../constants/etfBrand";
 import { useSessionStore } from "../stores/session";
 
 const props = defineProps({ code: { type: String, required: true } });
@@ -37,6 +45,13 @@ const HERO_LOGO_BY_CODE = {
   448290: tigerLogo,
   QYLD: globalxLogo,
   TQQQ: prosharesLogo,
+};
+
+const LOGO_BY_BRAND = {
+  kodex: kodexLogo,
+  tiger: tigerLogo,
+  globalx: globalxLogo,
+  proshares: prosharesLogo,
 };
 
 const etf = ref(null);
@@ -107,7 +122,6 @@ watch(
 );
 
 const productName = computed(() => etf.value?.name ?? "");
-const heroLogo = computed(() => HERO_LOGO_BY_CODE[props.code] ?? null);
 
 const showUnderstandModal = ref(false);
 const chatWidgetRef = ref(null);
@@ -119,19 +133,9 @@ const swiperModules = [Mousewheel, Keyboard];
 const DETAIL_SLIDE_COUNT = 4;
 const TERM_WHEEL_COOLDOWN = 1000;
 
-const progressPct = computed(() =>
-  ((currentSlide.value + 1) / DETAIL_SLIDE_COUNT) * 100,
+const progressPct = computed(
+  () => ((currentSlide.value + 1) / DETAIL_SLIDE_COUNT) * 100,
 );
-
-const mousewheelOptions = {
-  enabled: true,
-  forceToAxis: true,
-  thresholdDelta: 16,
-  thresholdTime: 280,
-  releaseOnEdges: false,
-};
-
-const keyboardOptions = { enabled: true, onlyInViewport: true };
 
 function updateScrollbar(activeIndex = 0) {
   currentSlide.value = Math.min(activeIndex, DETAIL_SLIDE_COUNT - 1);
@@ -288,20 +292,12 @@ const qa = computed(() => {
 // 전부)에서는 그 카드만 숨기고, 진단으로 넘어가는 CTA는 항상 노출한다.
 const hiddenInsightEvidence = computed(() => etf.value?.evidence?.[0] ?? null);
 
-const BRAND_BY_MANAGER_KEYWORD = [
-  ["미래에셋", "tiger"],
-  ["삼성", "kodex"],
-  ["Global X", "globalx"],
-  ["ProShares", "proshares"],
-];
+const heroBrand = computed(() => brandForEtf(etf.value));
 
-function brandFor(manager) {
-  if (!manager) return "default";
-  const hit = BRAND_BY_MANAGER_KEYWORD.find(([keyword]) =>
-    manager.includes(keyword),
-  );
-  return hit ? hit[1] : "default";
-}
+const heroLogo = computed(() => {
+  if (!etf.value) return null;
+  return LOGO_BY_BRAND[heroBrand.value] ?? HERO_LOGO_BY_CODE[etf.value.code] ?? null;
+});
 
 function openEtf(code) {
   router.push({ name: "detail", params: { code } });
@@ -329,18 +325,7 @@ function openEtf(code) {
       />
     </div>
 
-    <button type="button" class="back-btn" @click="router.back()">
-      <svg
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2.2"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-      >
-        <path d="M15 18 9 12l6-6" />
-      </svg>
-    </button>
+    <BackButton @click="router.back()" />
 
     <p v-if="loading" class="state-text">불러오는 중…</p>
     <p v-else-if="errorMessage" class="state-text">{{ errorMessage }}</p>
@@ -351,9 +336,9 @@ function openEtf(code) {
         direction="vertical"
         :modules="swiperModules"
         :slides-per-view="1"
-        :speed="640"
-        :mousewheel="mousewheelOptions"
-        :keyboard="keyboardOptions"
+        :speed="fullpageSwiperSpeed"
+        :mousewheel="fullpageMousewheelOptions"
+        :keyboard="fullpageKeyboardOptions"
         @swiper="handleSwiper"
         @slideChange="handleSlideChange"
       >
@@ -368,7 +353,7 @@ function openEtf(code) {
                 {{ etf.market === "US" ? "해외(US) 상장" : "국내(KR) 상장" }}
               </p>
 
-              <div class="promo-banner">
+              <div class="promo-banner" :class="heroBrand">
                 <img
                   v-if="heroLogo"
                   :src="heroLogo"
@@ -496,26 +481,11 @@ function openEtf(code) {
           class="detail-slide reco-slide"
           @wheel="handleInnerScrollWheel"
         >
-          <section class="reco-section">
-            <h2>이런 ETF도 있어요!</h2>
-
-            <div class="reco-grid">
-              <div
-                v-for="item in recommended"
-                :key="item.code"
-                class="reco-item"
-              >
-                <ProductCard
-                  :brand="brandFor(item.manager)"
-                  :code="item.code"
-                  :name="item.name"
-                  :manager="item.manager"
-                  :disabled="!item.ready"
-                  @open="openEtf(item.code)"
-                />
-              </div>
-            </div>
-          </section>
+          <EtfRecommendationSection
+            :items="recommended"
+            :brand-for="brandForEtf"
+            @open="openEtf"
+          />
         </SwiperSlide>
       </Swiper>
 
@@ -572,6 +542,21 @@ function openEtf(code) {
   background: #05070d;
 }
 
+.detail-page::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  z-index: 19;
+  height: 122px;
+  background: linear-gradient(
+    180deg,
+    #05070d 0%,
+    rgba(5, 7, 13, 0.92) 56%,
+    rgba(5, 7, 13, 0) 100%
+  );
+  pointer-events: none;
+}
+
 .detail-fullpage {
   width: 100%;
   height: 100%;
@@ -622,6 +607,10 @@ function openEtf(code) {
   gap: 12px;
 }
 
+.detail-page :deep(.page-header) {
+  z-index: 20;
+}
+
 .detail-progress-track {
   position: fixed;
   left: 0;
@@ -641,30 +630,6 @@ function openEtf(code) {
   transition: height 0.5s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.back-btn {
-  position: absolute;
-  top: 126px;
-  left: 48px;
-  z-index: 5;
-
-  width: 48px;
-  height: 48px;
-  border-radius: 12px;
-  border: none;
-  background: #1d2634;
-  color: #cfd8ea;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  flex-shrink: 0;
-}
-
-.back-btn svg {
-  width: 24px;
-  height: 24px;
-}
-
 section {
   max-width: 1105px;
   margin: 0 auto;
@@ -672,8 +637,7 @@ section {
 
 .intro-section,
 .qa-section,
-.warn-section,
-.reco-section {
+.warn-section {
   height: 100%;
   min-height: 100%;
   box-sizing: border-box;
@@ -685,7 +649,7 @@ section {
 
 .intro-section {
   max-width: 1105px;
-  padding: 120px 0 80px;
+  padding: 120px 0 150px;
   display: flex;
   flex-direction: column;
 }
@@ -720,10 +684,29 @@ section {
   margin: 34px auto 0;
   padding: 0;
   border-radius: 30px;
-  background: linear-gradient(180deg, #fff8f2 0%, #ffb37a 60%, #ff8a3d 100%);
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.promo-banner.kodex {
+  background: var(--brand-gradient-kodex);
+}
+
+.promo-banner.globalx {
+  background: var(--brand-gradient-globalx);
+}
+
+.promo-banner.tiger {
+  background: var(--brand-gradient-tiger);
+}
+
+.promo-banner.proshares {
+  background: var(--brand-gradient-proshares);
+}
+
+.promo-banner.default {
+  background: var(--brand-gradient-default);
 }
 
 .promo-logo {
@@ -780,14 +763,14 @@ section {
 .name-icon-bg {
   position: absolute;
   top: 50%;
-  right: -20%;
+  right: -28%;
   transform: translateY(-50%) rotate(-5deg);
   z-index: 0;
-  width: clamp(420px, 33vw, 520px);
+  width: clamp(520px, 42vw, 680px);
   height: auto;
-  opacity: 0.14;
-  /* filter: grayscale(1) blur(0.5px); */
-  filter: blur(0.5px);
+  opacity: 0.07;
+  filter: grayscale(0.5) blur(0.9px);
+  /* filter: blur(0.1px); */
   pointer-events: none;
   user-select: none;
 }
@@ -1169,43 +1152,6 @@ section {
   color: #454e60;
 }
 
-/* ==================================================
-   추천 상품
-================================================== */
-
-.reco-section {
-  position: relative;
-  max-width: 1068px;
-  margin-top: 0;
-  padding-top: 96px;
-}
-
-.reco-section::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 50%;
-  width: 100vw;
-  height: var(--size-section-divider);
-  transform: translateX(-50%);
-  background: var(--color-divider-strong);
-}
-
-.reco-section h2 {
-  margin: 0 0 28px;
-  color: #dfe3ec;
-  font-size: 24px;
-  font-weight: 600;
-  line-height: 1.4;
-  letter-spacing: -0.72px;
-}
-
-.reco-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 32px;
-}
-
 @media (max-width: 700px) {
   .detail-slide {
     padding: 0 20px;
@@ -1217,10 +1163,6 @@ section {
 
   .qa-grid {
     grid-template-columns: 1fr;
-  }
-
-  .reco-grid {
-    grid-template-columns: repeat(2, 1fr);
   }
 }
 

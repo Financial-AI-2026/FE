@@ -106,19 +106,6 @@ onMounted(async () => {
   width: clamp(200px, 20vw, 280px);
   height: auto;
   margin: 20px 0;
-  animation: loading-pulse 1.8s ease-in-out infinite;
-}
-
-@keyframes loading-pulse {
-  0%,
-  100% {
-    transform: scale(1);
-    opacity: 1;
-  }
-  50% {
-    transform: scale(1.05);
-    opacity: 0.85;
-  }
 }
 
 .msg {
