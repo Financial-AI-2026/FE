@@ -413,6 +413,7 @@ function openEtf(code) {
   position: relative;
   min-height: 100svh;
   box-sizing: border-box;
+  overflow-x: hidden;
   padding: 24px 48px 80px;
   background: linear-gradient(180deg, #09101a 0%, #2f4c76 100%);
 }
