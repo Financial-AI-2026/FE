@@ -153,16 +153,9 @@ function openEtf(code) {
         placeholder="상품명, 티커, 회사 이름으로 검색"
       />
       <button type="button" class="search-btn" aria-label="검색">
-        <svg
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2.2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-        >
-          <circle cx="11" cy="11" r="7" />
-          <line x1="21" y1="21" x2="16.65" y2="16.65" />
+        <svg viewBox="0 0 16.2501 16.2501" fill="currentColor">
+          <path d="M12.3592 6.86624C12.3592 3.83255 9.89994 1.37325 6.86624 1.37325C3.83255 1.37325 1.37325 3.83255 1.37325 6.86624C1.37325 9.89994 3.83255 12.3592 6.86624 12.3592V13.7325C3.07412 13.7325 0 10.6584 0 6.86624C0 3.07412 3.07412 0 6.86624 0C10.6584 0 13.7325 3.07412 13.7325 6.86624C13.7325 10.6584 10.6584 13.7325 6.86624 13.7325V12.3592C9.89994 12.3592 12.3592 9.89994 12.3592 6.86624Z" />
+          <path d="M10.9583 10.9583C11.2264 10.6901 11.6611 10.6901 11.9292 10.9583L16.049 15.078C16.3171 15.3462 16.3171 15.7808 16.049 16.049C15.7808 16.3171 15.3462 16.3171 15.078 16.049L10.9583 11.9292C10.6901 11.6611 10.6901 11.2264 10.9583 10.9583Z" />
         </svg>
       </button>
     </div>
@@ -170,7 +163,7 @@ function openEtf(code) {
     <div class="result-bar">
       <span class="count">
         <template v-if="loading">검색 중…</template>
-        <template v-else>검색 결과 총 {{ totalMatchCount }}건</template>
+        <template v-else>MVP에서는 아래 8개 상품만 검색할 수 있어요</template>
       </span>
       <button
         type="button"
@@ -178,17 +171,11 @@ function openEtf(code) {
         :class="{ on: analyzedOnly }"
         @click="analyzedOnly = !analyzedOnly"
       >
-        <svg
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2.5"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-        >
-          <polyline points="20 6 9 17 4 12" />
-        </svg>
         분석 완료 상품만 보기
+        <svg viewBox="0 0 15.4885 15.4885" fill="currentColor">
+          <path d="M14.1609 7.74425C14.1609 4.20043 11.2881 1.32759 7.74425 1.32759C4.20043 1.32759 1.32759 4.20043 1.32759 7.74425C1.32759 11.2881 4.20043 14.1609 7.74425 14.1609C11.2881 14.1609 14.1609 11.2881 14.1609 7.74425ZM15.4885 7.74425C15.4885 12.0213 12.0213 15.4885 7.74425 15.4885C3.46722 15.4885 0 12.0213 0 7.74425C0 3.46722 3.46722 0 7.74425 0C12.0213 0 15.4885 3.46722 15.4885 7.74425Z" />
+          <path d="M10.7944 5.52642C11.0417 5.25592 11.4616 5.23688 11.7322 5.48407C12.0027 5.73139 12.0217 6.15128 11.7745 6.42185L8.85317 9.61636C7.98421 10.5668 6.52529 10.6759 5.52469 9.86528L3.78656 8.45645C3.50173 8.22569 3.45731 7.80783 3.68803 7.52299C3.91876 7.2382 4.33664 7.19469 4.62149 7.42532L6.36049 8.83415C6.8153 9.20264 7.47892 9.15294 7.8739 8.72093L10.7944 5.52642Z" />
+        </svg>
       </button>
     </div>
 
@@ -220,21 +207,22 @@ function openEtf(code) {
   min-height: 100svh;
   box-sizing: border-box;
   padding: 0 48px 72px;
-  background: linear-gradient(
-    180deg,
-    #09101a 0%,
-    #2f4c76 100%
-  );
+  /* 피그마엔 배경 사각형이 두 겹(프레임 전체용 + 1495px짜리) 겹쳐 있지만,
+     위쪽 사각형이 프레임(1173px) 전체를 이미 덮고 있어서 아래쪽 사각형은
+     실제로 화면에 전혀 보이지 않는다 — 보이는 색만 그대로 옮겼다.
+     정지 지점이 자기 높이 기준 53.515%/133.86%(음수 범위 밖)라 위쪽은
+     거의 단색이다가 아래로 갈수록 서서히 밝아진다. */
+  background: linear-gradient(180deg, #09101a 800.1px, #2f4c76 2001.2px);
 }
 
 .badges {
   margin-left: auto;
   display: flex;
-  gap: 10px;
+  gap: 12px;
 }
 
 h1 {
-  margin: 0 0 40px;
+  margin: 0 0 32px;
   padding-top: 160px;
   text-align: center;
   font-size: 32px;
@@ -247,7 +235,7 @@ h1 {
 .search-bar {
   width: min(100%, 491px);
   min-height: 52px;
-  margin: 0 auto;
+  margin: 0 auto 40px;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -276,12 +264,13 @@ h1 {
 }
 
 .search-btn {
-  width: 18px;
-  height: 18px;
+  width: 16.25px;
+  height: 16.25px;
+  padding: 0;
   border-radius: 50%;
   border: none;
   background: transparent;
-  color: #83a8e9;
+  color: #6e8fc4;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -290,17 +279,18 @@ h1 {
 }
 
 .search-btn svg {
-  width: 16.25px;
-  height: 16.25px;
+  width: 100%;
+  height: 100%;
+  flex-shrink: 0;
 }
 
 .result-bar {
   width: auto;
-  margin: 56px -48px 25px;
+  margin: 0 -48px 25px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 25px max(48px, calc((100% - 1066px) / 2)) 0;
+  padding: 56px calc(48px + max(0px, (100% - 1066px) / 2)) 0;
   border-top: 4px solid #1d2e49;
   border-bottom: 0;
 }
@@ -323,7 +313,7 @@ h1 {
 .toggle {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   border: none;
   background: transparent;
   color: #e6e6e6;
@@ -336,8 +326,8 @@ h1 {
 }
 
 .toggle svg {
-  width: 14px;
-  height: 14px;
+  width: 15.489px;
+  height: 15.489px;
 }
 
 .toggle.on {
@@ -349,7 +339,7 @@ h1 {
   margin: 0 auto;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 32px;
+  gap: 25px 32px;
 }
 
 .load-more-sentinel {
