@@ -4,11 +4,12 @@ import { Swiper, SwiperSlide } from "swiper/vue";
 import { Keyboard, Mousewheel } from "swiper/modules";
 import "swiper/css";
 import { useRouter } from "vue-router";
-import ProductCard from "../components/ProductCard.vue";
 import BaseBadge from "../components/base/BaseBadge.vue";
+import BackButton from "../components/base/BackButton.vue";
 import ChatWidget from "../components/ChatWidget.vue";
 import PageHeader from "../components/base/PageHeader.vue";
 import DiagnosticWidget from "../components/DiagnosticWidget.vue";
+import EtfRecommendationSection from "../components/EtfRecommendationSection.vue";
 import { fetchEtfDiagnosis, fetchEtfs, fetchEtfsByCodes, ApiError } from "../api/client";
 import {
   fullpageKeyboardOptions,
@@ -188,18 +189,7 @@ watch(
       <div class="result-progress-fill" :style="{ height: progressPct + '%' }" />
     </div>
 
-    <button type="button" class="back-btn" @click="goBackFromResult">
-      <svg
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2.2"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-      >
-        <path d="M15 18 9 12l6-6" />
-      </svg>
-    </button>
+    <BackButton @click="goBackFromResult" />
 
     <p v-if="loading" class="state-text">불러오는 중…</p>
     <p v-else-if="errorMessage" class="state-text">{{ errorMessage }}</p>
@@ -327,22 +317,11 @@ watch(
         </SwiperSlide>
 
         <SwiperSlide class="result-slide reco-slide" @wheel="handleInnerScrollWheel">
-          <section class="reco-section">
-            <h2>다른 ETF 상품도 살펴보세요!</h2>
-
-            <div class="reco-grid">
-              <div v-for="item in recommended" :key="item.code" class="reco-item">
-                <ProductCard
-                  :brand="brandFor(item.manager)"
-                  :code="item.code"
-                  :name="item.name"
-                  :manager="item.manager"
-                  :disabled="!item.ready"
-                  @open="openEtf(item.code)"
-                />
-              </div>
-            </div>
-          </section>
+          <EtfRecommendationSection
+            :items="recommended"
+            :brand-for="brandFor"
+            @open="openEtf"
+          />
         </SwiperSlide>
       </Swiper>
     </template>
@@ -429,30 +408,6 @@ watch(
   background: linear-gradient(180deg, #003b66 0%, #007acc 100%);
   border-radius: 0 999px 999px 0;
   transition: height 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.back-btn {
-  position: absolute;
-  top: 50px;
-  left: clamp(28px, 5vw, 80px);
-  z-index: 5;
-
-  width: 32px;
-  height: 32px;
-  border-radius: 12px;
-  border: none;
-  background: var(--color-surface-subtle);
-  color: #cfd8ea;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  flex-shrink: 0;
-}
-
-.back-btn svg {
-  width: 16px;
-  height: 16px;
 }
 
 section {
@@ -704,59 +659,12 @@ section {
   background: #2f6fe0;
 }
 
-/* ==================================================
-   추천 상품
-================================================== */
-
-.reco-section {
-  position: relative;
-  max-width: 1066px;
-  min-height: 100%;
-  box-sizing: border-box;
-  padding: 96px 0;
-}
-
-.reco-section::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 50%;
-  width: 100vw;
-  height: var(--size-section-divider);
-  transform: translateX(-50%);
-  background: var(--color-divider-strong);
-}
-
-.reco-section h2 {
-  margin: 0 0 16px;
-  color: #dfe3ec;
-  font-size: clamp(15px, 1.2vw, 19px);
-  font-weight: 600;
-}
-
-.reco-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 25px 32px;
-}
-
 @media (max-width: 700px) {
   .result-slide {
     padding: 0 20px;
   }
 
   .also-cards {
-    grid-template-columns: 1fr;
-  }
-
-  .reco-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 18px;
-  }
-}
-
-@media (max-width: 420px) {
-  .reco-grid {
     grid-template-columns: 1fr;
   }
 }

@@ -4,10 +4,11 @@ import { Swiper, SwiperSlide } from "swiper/vue";
 import { Keyboard, Mousewheel } from "swiper/modules";
 import "swiper/css";
 import { useRouter } from "vue-router";
-import ProductCard from "../components/ProductCard.vue";
 import BaseBadge from "../components/base/BaseBadge.vue";
+import BackButton from "../components/base/BackButton.vue";
 import PageHeader from "../components/base/PageHeader.vue";
 import ChatWidget from "../components/ChatWidget.vue";
+import EtfRecommendationSection from "../components/EtfRecommendationSection.vue";
 import magnifierIcon from "../assets/icons/icon-search.png";
 import warningIcon from "../assets/icons/warning-triangle.svg";
 import tigerLogo from "../assets/icons/tiger.png";
@@ -324,18 +325,7 @@ function openEtf(code) {
       />
     </div>
 
-    <button type="button" class="back-btn" @click="router.back()">
-      <svg
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2.2"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-      >
-        <path d="M15 18 9 12l6-6" />
-      </svg>
-    </button>
+    <BackButton @click="router.back()" />
 
     <p v-if="loading" class="state-text">불러오는 중…</p>
     <p v-else-if="errorMessage" class="state-text">{{ errorMessage }}</p>
@@ -491,26 +481,11 @@ function openEtf(code) {
           class="detail-slide reco-slide"
           @wheel="handleInnerScrollWheel"
         >
-          <section class="reco-section">
-            <h2>이런 ETF도 있어요!</h2>
-
-            <div class="reco-grid">
-              <div
-                v-for="item in recommended"
-                :key="item.code"
-                class="reco-item"
-              >
-                <ProductCard
-                  :brand="brandFor(item.manager)"
-                  :code="item.code"
-                  :name="item.name"
-                  :manager="item.manager"
-                  :disabled="!item.ready"
-                  @open="openEtf(item.code)"
-                />
-              </div>
-            </div>
-          </section>
+          <EtfRecommendationSection
+            :items="recommended"
+            :brand-for="brandFor"
+            @open="openEtf"
+          />
         </SwiperSlide>
       </Swiper>
 
@@ -655,30 +630,6 @@ function openEtf(code) {
   transition: height 0.5s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.back-btn {
-  position: absolute;
-  top: 126px;
-  left: 48px;
-  z-index: 5;
-
-  width: 48px;
-  height: 48px;
-  border-radius: 12px;
-  border: none;
-  background: #1d2634;
-  color: #cfd8ea;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  flex-shrink: 0;
-}
-
-.back-btn svg {
-  width: 24px;
-  height: 24px;
-}
-
 section {
   max-width: 1105px;
   margin: 0 auto;
@@ -686,8 +637,7 @@ section {
 
 .intro-section,
 .qa-section,
-.warn-section,
-.reco-section {
+.warn-section {
   height: 100%;
   min-height: 100%;
   box-sizing: border-box;
@@ -1183,43 +1133,6 @@ section {
   color: #454e60;
 }
 
-/* ==================================================
-   추천 상품
-================================================== */
-
-.reco-section {
-  position: relative;
-  max-width: 1068px;
-  margin-top: 0;
-  padding-top: 96px;
-}
-
-.reco-section::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 50%;
-  width: 100vw;
-  height: var(--size-section-divider);
-  transform: translateX(-50%);
-  background: var(--color-divider-strong);
-}
-
-.reco-section h2 {
-  margin: 0 0 28px;
-  color: #dfe3ec;
-  font-size: 24px;
-  font-weight: 600;
-  line-height: 1.4;
-  letter-spacing: -0.72px;
-}
-
-.reco-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 32px;
-}
-
 @media (max-width: 700px) {
   .detail-slide {
     padding: 0 20px;
@@ -1231,10 +1144,6 @@ section {
 
   .qa-grid {
     grid-template-columns: 1fr;
-  }
-
-  .reco-grid {
-    grid-template-columns: repeat(2, 1fr);
   }
 }
 
