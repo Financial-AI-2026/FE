@@ -42,16 +42,13 @@ function retryCurrentDiagnosis() {
   });
 }
 
-// warningsVisible만큼만 노출 (F-S6-02 "경고 카드 정렬·최대 2개 노출") — 각
-// 경고는 hero+sim 블록을 하나씩 갖는다. "이런 점도 있어요!"는 별개로
-// `infos[]`(경고까지는 아닌 참고 정보) 자리다 — 애초에 이 화면 mock의
-// points 문구("주식을 직접 사지 않고 증권사와 약속만 했어요" 등)가 실제
-// `I-SYN-01`/`I-FXH-01` info 규칙 문구와 그대로 일치해서 확인됨(2번째
-// warning 카드가 아니었다). infos는 warnings 유무와 무관하게 내려올 수
-// 있어 두 갈래(경고 있음/없음) 어느 쪽에서도 노출한다.
-const visibleWarnings = computed(() =>
-  (diagnosis.value?.warnings ?? []).slice(0, diagnosis.value?.warningsVisible ?? 0),
-);
+function goBackFromResult() {
+  router.push({ name: "search" });
+}
+
+// BE가 판정한 경고는 모두 보여준다. `warningsVisible`은 기존 최대 2개 노출
+// 정책의 잔재라, 더보기 UI가 없는 현재 화면에서는 사용자에게 경고가 누락된다.
+const visibleWarnings = computed(() => diagnosis.value?.warnings ?? []);
 const heroWarning = computed(() => visibleWarnings.value[0] ?? null);
 const heroEvidence = computed(() => heroWarning.value?.evidence?.[0] ?? null);
 const infoCards = computed(() => diagnosis.value?.infos ?? []);
@@ -155,7 +152,7 @@ onUnmounted(() => {
       </div>
     </PageHeader>
 
-    <button type="button" class="back-btn" @click="router.back()">
+    <button type="button" class="back-btn" @click="goBackFromResult">
       <svg
         viewBox="0 0 24 24"
         fill="none"
@@ -189,7 +186,7 @@ onUnmounted(() => {
       </section>
 
       <template v-if="heroWarning">
-        <!-- warningsVisible만큼(최대 2개, F-S6-02) 각자 hero+sim 블록 하나씩 -->
+        <!-- 경고는 BE가 내려준 순서대로 모두 노출한다. -->
         <section v-for="w in visibleWarnings" :key="w.code" class="sim-section">
           <h2 class="reveal">{{ w.title || w.summary }}</h2>
           <DiagnosticWidget v-if="w.widget" class="reveal" :type="w.widget.type" />
