@@ -17,7 +17,7 @@ defineEmits(["open"]);
     <div class="reco-grid">
       <div v-for="item in items" :key="item.code" class="reco-item">
         <ProductCard
-          :brand="brandFor(item.manager)"
+          :brand="brandFor(item)"
           :code="item.code"
           :name="item.name"
           :manager="item.manager"

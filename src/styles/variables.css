@@ -40,6 +40,13 @@
   --color-badge-purple-bg: #591775;
   --color-badge-purple-border: transparent;
 
+  /* Brand banner gradients */
+  --brand-gradient-kodex: linear-gradient(180deg, #f8fcff 0%, #a8def8 100%);
+  --brand-gradient-tiger: linear-gradient(180deg, #fff8f2 0%, #ffcc9f 52%, #ff9f58 100%);
+  --brand-gradient-proshares: linear-gradient(180deg, #fbfff7 0%, #bdff9b 100%);
+  --brand-gradient-globalx: linear-gradient(180deg, #f7fff9 0%, #b9f3d1 42%, #28c975 100%);
+  --brand-gradient-default: linear-gradient(180deg, var(--color-surface-subtle) 0%, var(--color-bg-card) 100%);
+
   /* Spacing */
   --space-1: 4px;
   --space-2: 8px;

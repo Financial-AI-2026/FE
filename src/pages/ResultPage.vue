@@ -11,6 +11,7 @@ import PageHeader from "../components/base/PageHeader.vue";
 import DiagnosticWidget from "../components/DiagnosticWidget.vue";
 import EtfRecommendationSection from "../components/EtfRecommendationSection.vue";
 import { fetchEtfDiagnosis, fetchEtfs, fetchEtfsByCodes, ApiError } from "../api/client";
+import { brandForEtf } from "../constants/etfBrand";
 import {
   fullpageKeyboardOptions,
   fullpageMousewheelOptions,
@@ -26,19 +27,6 @@ const diagnosis = ref(null);
 const loading = ref(true);
 const errorMessage = ref(null);
 const recommended = ref([]);
-
-const BRAND_BY_MANAGER_KEYWORD = [
-  ["미래에셋", "tiger"],
-  ["삼성", "kodex"],
-  ["Global X", "globalx"],
-  ["ProShares", "proshares"],
-];
-
-function brandFor(manager) {
-  if (!manager) return "default";
-  const hit = BRAND_BY_MANAGER_KEYWORD.find(([keyword]) => manager.includes(keyword));
-  return hit ? hit[1] : "default";
-}
 
 function openEtf(code) {
   router.push({ name: "detail", params: { code } });
@@ -319,7 +307,7 @@ watch(
         <SwiperSlide class="result-slide reco-slide" @wheel="handleInnerScrollWheel">
           <EtfRecommendationSection
             :items="recommended"
-            :brand-for="brandFor"
+            :brand-for="brandForEtf"
             @open="openEtf"
           />
         </SwiperSlide>

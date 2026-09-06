@@ -11,6 +11,7 @@ import ChatWidget from "../components/ChatWidget.vue";
 import EtfRecommendationSection from "../components/EtfRecommendationSection.vue";
 import magnifierIcon from "../assets/icons/icon-search.png";
 import warningIcon from "../assets/icons/warning-triangle.svg";
+import kodexLogo from "../assets/icons/kodex.png";
 import tigerLogo from "../assets/icons/tiger.png";
 import globalxLogo from "../assets/icons/globalx.png";
 import prosharesLogo from "../assets/icons/proshares.png";
@@ -25,6 +26,7 @@ import {
   fullpageMousewheelOptions,
   fullpageSwiperSpeed,
 } from "../constants/swiperOptions";
+import { brandForEtf } from "../constants/etfBrand";
 import { useSessionStore } from "../stores/session";
 
 const props = defineProps({ code: { type: String, required: true } });
@@ -43,6 +45,13 @@ const HERO_LOGO_BY_CODE = {
   448290: tigerLogo,
   QYLD: globalxLogo,
   TQQQ: prosharesLogo,
+};
+
+const LOGO_BY_BRAND = {
+  kodex: kodexLogo,
+  tiger: tigerLogo,
+  globalx: globalxLogo,
+  proshares: prosharesLogo,
 };
 
 const etf = ref(null);
@@ -113,7 +122,6 @@ watch(
 );
 
 const productName = computed(() => etf.value?.name ?? "");
-const heroLogo = computed(() => HERO_LOGO_BY_CODE[props.code] ?? null);
 
 const showUnderstandModal = ref(false);
 const chatWidgetRef = ref(null);
@@ -284,20 +292,12 @@ const qa = computed(() => {
 // 전부)에서는 그 카드만 숨기고, 진단으로 넘어가는 CTA는 항상 노출한다.
 const hiddenInsightEvidence = computed(() => etf.value?.evidence?.[0] ?? null);
 
-const BRAND_BY_MANAGER_KEYWORD = [
-  ["미래에셋", "tiger"],
-  ["삼성", "kodex"],
-  ["Global X", "globalx"],
-  ["ProShares", "proshares"],
-];
+const heroBrand = computed(() => brandForEtf(etf.value));
 
-function brandFor(manager) {
-  if (!manager) return "default";
-  const hit = BRAND_BY_MANAGER_KEYWORD.find(([keyword]) =>
-    manager.includes(keyword),
-  );
-  return hit ? hit[1] : "default";
-}
+const heroLogo = computed(() => {
+  if (!etf.value) return null;
+  return LOGO_BY_BRAND[heroBrand.value] ?? HERO_LOGO_BY_CODE[etf.value.code] ?? null;
+});
 
 function openEtf(code) {
   router.push({ name: "detail", params: { code } });
@@ -353,7 +353,7 @@ function openEtf(code) {
                 {{ etf.market === "US" ? "해외(US) 상장" : "국내(KR) 상장" }}
               </p>
 
-              <div class="promo-banner">
+              <div class="promo-banner" :class="heroBrand">
                 <img
                   v-if="heroLogo"
                   :src="heroLogo"
@@ -483,7 +483,7 @@ function openEtf(code) {
         >
           <EtfRecommendationSection
             :items="recommended"
-            :brand-for="brandFor"
+            :brand-for="brandForEtf"
             @open="openEtf"
           />
         </SwiperSlide>
@@ -684,10 +684,29 @@ section {
   margin: 34px auto 0;
   padding: 0;
   border-radius: 30px;
-  background: linear-gradient(180deg, #fff8f2 0%, #ffb37a 60%, #ff8a3d 100%);
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.promo-banner.kodex {
+  background: var(--brand-gradient-kodex);
+}
+
+.promo-banner.globalx {
+  background: var(--brand-gradient-globalx);
+}
+
+.promo-banner.tiger {
+  background: var(--brand-gradient-tiger);
+}
+
+.promo-banner.proshares {
+  background: var(--brand-gradient-proshares);
+}
+
+.promo-banner.default {
+  background: var(--brand-gradient-default);
 }
 
 .promo-logo {

@@ -131,24 +131,23 @@ defineEmits(['open'])
 }
 
 .banner.kodex {
-  background: linear-gradient(135deg, #eaf3ff 0%, #bdd6ff 100%);
+  background: var(--brand-gradient-kodex);
 }
 
 .banner.globalx {
-  background: linear-gradient(135deg, #eafbe9 0%, #bdeec6 100%);
+  background: var(--brand-gradient-globalx);
 }
 
 .banner.tiger {
-  /* DetailPage.vue의 TIGER ETF 배너와 같은 톤으로 맞춤 */
-  background: linear-gradient(135deg, #fff8f2 0%, #ffb37a 100%);
+  background: var(--brand-gradient-tiger);
 }
 
 .banner.proshares {
-  background: linear-gradient(135deg, #f6fff1 0%, #c2ff9f 100%);
+  background: var(--brand-gradient-proshares);
 }
 
 .banner.default {
-  background: linear-gradient(135deg, var(--color-surface-subtle) 0%, var(--color-bg-card) 100%);
+  background: var(--brand-gradient-default);
 }
 
 /* 로고마다 원본 가로세로 비율이 달라서(TIGER/Global X는 옆으로 긴 워드마크,
