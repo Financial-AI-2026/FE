@@ -66,8 +66,8 @@ defineEmits(['open'])
       @click="$emit('open')"
     >
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M7 17 17 7" />
-        <path d="M9 7h8v8" />
+        <path d="M7 7 17 17" />
+        <path d="M17 9v8h-8" />
       </svg>
     </BaseButton>
   </article>
@@ -124,7 +124,7 @@ defineEmits(['open'])
 /* 배너 그라디언트/로고 색상은 kodex·globalx 브랜드 고유 색이라
    앱 디자인 토큰이 아닌 이 컴포넌트의 상수로 둔다. */
 .banner {
-  height: 172px;
+  height: 145px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -151,10 +151,13 @@ defineEmits(['open'])
   background: linear-gradient(135deg, var(--color-surface-subtle) 0%, var(--color-bg-card) 100%);
 }
 
+/* 로고마다 원본 가로세로 비율이 달라서(TIGER/Global X는 옆으로 긴 워드마크,
+   ProShares는 심볼+글자라 더 컴팩트) height만 고정하면 로고별로 차지하는
+   크기가 들쭉날쭉해진다. width/height를 모두 고정한 박스 안에서
+   object-fit: contain으로 맞춰 어떤 로고든 같은 박스 크기를 넘지 않게 한다. */
 .brand-logo {
+  width: 78%;
   height: clamp(28px, 2.6vw, 37px);
-  width: auto;
-  max-width: 78%;
   object-fit: contain;
 }
 
@@ -166,7 +169,6 @@ defineEmits(['open'])
 }
 
 .body {
-  min-height: 86px;
   box-sizing: border-box;
   padding: 16px;
   background: #404040;
@@ -176,6 +178,15 @@ defineEmits(['open'])
   margin: 0;
   line-height: 1.4;
   letter-spacing: -0.03em;
+}
+
+.body p:nth-of-type(2) {
+  margin-top: 4px;
+  color: #ffffff;
+}
+
+.body p:nth-of-type(3) {
+  margin-top: 14px;
 }
 
 .line.title {
