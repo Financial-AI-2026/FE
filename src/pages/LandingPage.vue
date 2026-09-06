@@ -106,7 +106,7 @@ const stars = Array.from({ length: 34 }, () => ({
         </p>
 
         <button class="cta" type="button" @click="router.push({ name: 'questions' })">
-          ETF 진단하러 가기
+          내 투자 성향부터 알려주기
         </button>
       </div>
     </section>
