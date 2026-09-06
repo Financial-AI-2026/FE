@@ -125,7 +125,7 @@ function prev() {
     <!-- =========================
          QUESTION
     ========================== -->
-    <transition name="qrise">
+    <transition name="qrise" appear>
       <div
         v-if="started"
         :key="step"
@@ -780,8 +780,8 @@ function prev() {
 
 .qrise-enter-active {
   transition:
-    opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1),
-    transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    opacity 0.7s ease-out,
+    transform 0.7s ease-out;
 }
 
 .qrise-leave-active {
@@ -793,7 +793,7 @@ function prev() {
 .qrise-enter-from {
   opacity: 0;
 
-  transform: translateX(-50%) translateY(45px);
+  transform: translateX(-50%) translateY(30px);
 }
 
 .qrise-enter-to {
