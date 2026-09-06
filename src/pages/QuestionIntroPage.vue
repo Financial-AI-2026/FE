@@ -3,12 +3,7 @@ import { ref, reactive, computed } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import searchDocumentIcon from "../assets/icons/icon-note-document.png";
 import PageHeader from "../components/base/PageHeader.vue";
-import {
-  FUND_NATURE_BY_OPTION,
-  HORIZON_BY_OPTION,
-  PURPOSE_BY_OPTION,
-  useSessionStore,
-} from "../stores/session";
+import { useSessionStore } from "../stores/session";
 
 const router = useRouter();
 const route = useRoute();
@@ -49,15 +44,7 @@ const questions = [
 const started = ref(true);
 const step = ref(0);
 
-const answers = reactive({
-  0: HORIZON_BY_OPTION.indexOf(session.horizon),
-  1: PURPOSE_BY_OPTION.indexOf(session.purpose),
-  2: FUND_NATURE_BY_OPTION.indexOf(session.fundNature),
-});
-
-Object.keys(answers).forEach((key) => {
-  if (answers[key] < 0) delete answers[key];
-});
+const answers = reactive({});
 
 const current = computed(() => questions[step.value]);
 
