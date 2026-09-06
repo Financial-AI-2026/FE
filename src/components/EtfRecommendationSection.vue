@@ -37,7 +37,7 @@ defineEmits(["open"]);
   min-height: 100%;
   box-sizing: border-box;
   margin: 0 auto;
-  padding-top: 96px;
+  padding-top: clamp(120px, 14svh, 160px);
 }
 
 .reco-section::before {
