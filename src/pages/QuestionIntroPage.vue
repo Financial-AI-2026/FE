@@ -1,11 +1,12 @@
 <script setup>
 import { ref, reactive, computed } from "vue";
-import { useRouter } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import searchDocumentIcon from "../assets/icons/icon-note-document.png";
 import PageHeader from "../components/base/PageHeader.vue";
 import { useSessionStore } from "../stores/session";
 
 const router = useRouter();
+const route = useRoute();
 const session = useSessionStore();
 
 const questions = [
@@ -68,7 +69,13 @@ function next() {
     step.value += 1;
   } else {
     session.setAnswers(answers);
-    router.push({ name: "search" });
+    const returnCode =
+      typeof route.query.code === "string" ? route.query.code : session.currentCode;
+    if (route.query.returnTo === "result" && returnCode) {
+      router.push({ name: "detail-loading", params: { code: returnCode } });
+    } else {
+      router.push({ name: "search" });
+    }
   }
 }
 

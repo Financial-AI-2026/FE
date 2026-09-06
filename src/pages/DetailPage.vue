@@ -246,12 +246,16 @@ onUnmounted(() => {
 // (`detail`)로 서로 다른 문구다 (F-S4-01/F-S4-02, MVP_테스트데이터_ETF8종.md §2).
 const terms = computed(() =>
   (etf.value?.tokens ?? []).map((token) => ({
-    label:
-      token.text ?? (token.absent ? `(${token.absent} 없음)` : `#${token.seq}`),
+    label: token.text ?? formatAbsentToken(token),
     phrase: token.translation,
     detail: token.detail,
   })),
 );
+
+function formatAbsentToken(token) {
+  if (!token.absent) return `#${token.seq}`;
+  return `(${token.absent.endsWith("없음") ? token.absent : `${token.absent} 없음`})`;
+}
 
 const activeTerm = ref(0);
 watch(terms, () => {

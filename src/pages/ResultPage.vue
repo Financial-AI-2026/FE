@@ -35,16 +35,20 @@ function openEtf(code) {
   router.push({ name: "detail", params: { code } });
 }
 
-// warningsVisible만큼만 노출 (F-S6-02 "경고 카드 정렬·최대 2개 노출") — 각
-// 경고는 hero+sim 블록을 하나씩 갖는다. "이런 점도 있어요!"는 별개로
-// `infos[]`(경고까지는 아닌 참고 정보) 자리다 — 애초에 이 화면 mock의
-// points 문구("주식을 직접 사지 않고 증권사와 약속만 했어요" 등)가 실제
-// `I-SYN-01`/`I-FXH-01` info 규칙 문구와 그대로 일치해서 확인됨(2번째
-// warning 카드가 아니었다). infos는 warnings 유무와 무관하게 내려올 수
-// 있어 두 갈래(경고 있음/없음) 어느 쪽에서도 노출한다.
-const visibleWarnings = computed(() =>
-  (diagnosis.value?.warnings ?? []).slice(0, diagnosis.value?.warningsVisible ?? 0),
-);
+function retryCurrentDiagnosis() {
+  router.push({
+    name: "questions",
+    query: { returnTo: "result", code: props.code },
+  });
+}
+
+function goBackFromResult() {
+  router.push({ name: "detail", params: { code: props.code } });
+}
+
+// BE가 판정한 경고는 모두 보여준다. `warningsVisible`은 기존 최대 2개 노출
+// 정책의 잔재라, 더보기 UI가 없는 현재 화면에서는 사용자에게 경고가 누락된다.
+const visibleWarnings = computed(() => diagnosis.value?.warnings ?? []);
 const heroWarning = computed(() => visibleWarnings.value[0] ?? null);
 const heroEvidence = computed(() => heroWarning.value?.evidence?.[0] ?? null);
 const infoCards = computed(() => diagnosis.value?.infos ?? []);
@@ -53,6 +57,7 @@ async function loadDiagnosis(code) {
   loading.value = true;
   errorMessage.value = null;
   try {
+    session.setCurrentCode(code);
     diagnosis.value = await fetchEtfDiagnosis(code, session.conditionParams);
   } catch (err) {
     diagnosis.value = null;
@@ -96,7 +101,10 @@ watch(
   (code) => {
     if (!code) return;
     if (!session.hasConditions) {
-      router.replace({ name: "questions" });
+      router.replace({
+        name: "questions",
+        query: { returnTo: "result", code },
+      });
       return;
     }
     loadDiagnosis(code);
@@ -144,7 +152,7 @@ onUnmounted(() => {
       </div>
     </PageHeader>
 
-    <button type="button" class="back-btn" @click="router.back()">
+    <button type="button" class="back-btn" @click="goBackFromResult">
       <svg
         viewBox="0 0 24 24"
         fill="none"
@@ -178,7 +186,7 @@ onUnmounted(() => {
       </section>
 
       <template v-if="heroWarning">
-        <!-- warningsVisible만큼(최대 2개, F-S6-02) 각자 hero+sim 블록 하나씩 -->
+        <!-- 경고는 BE가 내려준 순서대로 모두 노출한다. -->
         <section v-for="w in visibleWarnings" :key="w.code" class="sim-section">
           <h2 class="reveal">{{ w.title || w.summary }}</h2>
           <DiagnosticWidget v-if="w.widget" class="reveal" :type="w.widget.type" />
@@ -232,7 +240,7 @@ onUnmounted(() => {
       <button
         type="button"
         class="retry-btn reveal"
-        @click="router.push({ name: 'questions' })"
+        @click="retryCurrentDiagnosis"
       >
         조건 수정해서 다시 진단받기
       </button>
@@ -261,7 +269,7 @@ onUnmounted(() => {
       :horizon="session.horizon"
       :purpose="session.purpose"
       :fund-nature="session.fundNature"
-      @retry="router.push({ name: 'questions' })"
+      @retry="retryCurrentDiagnosis"
       @view-products="router.push({ name: 'search' })"
     />
   </div>
@@ -288,12 +296,16 @@ onUnmounted(() => {
 }
 
 .back-btn {
-  margin-top: 50px;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
+  position: absolute;
+  top: 126px;
+  left: 48px;
+  z-index: 5;
+
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
   border: none;
-  background: var(--color-surface-subtle);
+  background: #1d2634;
   color: #cfd8ea;
   display: flex;
   align-items: center;
@@ -303,8 +315,8 @@ onUnmounted(() => {
 }
 
 .back-btn svg {
-  width: 16px;
-  height: 16px;
+  width: 24px;
+  height: 24px;
 }
 
 section {

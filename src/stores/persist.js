@@ -4,6 +4,17 @@
 
 const STORAGE_PREFIX = "etf-diagnosis:";
 
+function getPersistedState(storeId, state) {
+  if (storeId === "session") {
+    return {
+      viewedCodes: state.viewedCodes,
+      currentCode: state.currentCode,
+    };
+  }
+
+  return state;
+}
+
 export function sessionStoragePersistPlugin({ store }) {
   const key = STORAGE_PREFIX + store.$id;
 
@@ -18,7 +29,7 @@ export function sessionStoragePersistPlugin({ store }) {
 
   store.$subscribe((_mutation, state) => {
     try {
-      sessionStorage.setItem(key, JSON.stringify(state));
+      sessionStorage.setItem(key, JSON.stringify(getPersistedState(store.$id, state)));
     } catch {
       // 사생활 보호 모드/용량 초과 등은 조용히 무시 — 세션 지속은 편의 기능일 뿐
     }
