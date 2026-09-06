@@ -2,7 +2,7 @@
 import ProductCard from "./ProductCard.vue";
 
 defineProps({
-  title: { type: String, default: "이런 ETF도 있어요!" },
+  title: { type: String, default: "다른 ETF 상품도 살펴보세요!" },
   items: { type: Array, default: () => [] },
   brandFor: { type: Function, required: true },
 });
