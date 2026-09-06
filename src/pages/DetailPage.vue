@@ -147,14 +147,13 @@ onUnmounted(() => {
 });
 
 // 이름 토큰 분해 — API `tokens`를 그대로 쓴다. `label`은 원문(없으면 "absent"
-// 마커), `phrase`/`detail`은 둘 다 같은 실제 번역문(`translation`)을 쓴다 —
-// API가 짧은 설명 한 줄만 주기 때문에, 없는 문구를 새로 짓는 대신 그 한 줄을
-// 두 자리에 그대로 재사용한다 (문구는 창작하지 않는다는 원칙).
+// 마커), `phrase`는 한 줄 번역(`translation`), `detail`은 2~3문장 상세 설명
+// (`detail`)로 서로 다른 문구다 (F-S4-01/F-S4-02, MVP_테스트데이터_ETF8종.md §2).
 const terms = computed(() =>
   (etf.value?.tokens ?? []).map((token) => ({
     label: token.text ?? (token.absent ? `(${token.absent} 없음)` : `#${token.seq}`),
     phrase: token.translation,
-    detail: token.translation,
+    detail: token.detail,
   })),
 );
 
