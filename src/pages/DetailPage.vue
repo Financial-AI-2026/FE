@@ -1,5 +1,8 @@
 <script setup>
-import { ref, reactive, computed, watch, onMounted, onUnmounted } from "vue";
+import { ref, computed, watch, onMounted, onUnmounted } from "vue";
+import { Swiper, SwiperSlide } from "swiper/vue";
+import { Keyboard, Mousewheel } from "swiper/modules";
+import "swiper/css";
 import { useRouter } from "vue-router";
 import ProductCard from "../components/ProductCard.vue";
 import BaseBadge from "../components/base/BaseBadge.vue";
@@ -10,7 +13,12 @@ import warningIcon from "../assets/icons/warning-triangle.svg";
 import tigerLogo from "../assets/icons/tiger.png";
 import globalxLogo from "../assets/icons/globalx.png";
 import prosharesLogo from "../assets/icons/proshares.png";
-import { fetchEtfDetail, fetchEtfs, fetchEtfsByCodes, ApiError } from "../api/client";
+import {
+  fetchEtfDetail,
+  fetchEtfs,
+  fetchEtfsByCodes,
+  ApiError,
+} from "../api/client";
 import { useSessionStore } from "../stores/session";
 
 const props = defineProps({ code: { type: String, required: true } });
@@ -21,12 +29,12 @@ const session = useSessionStore();
 // 로고가 확실한 MVP 8종만 (검색 확장 이후 나머지 수천 종은 매핑 정보가
 // 없다 — ProductCard와 동일하게 로고 없는 기본 배너로 대체).
 const HERO_LOGO_BY_CODE = {
-  "102110": tigerLogo,
-  "133690": tigerLogo,
-  "418660": tigerLogo,
-  "435420": tigerLogo,
-  "441680": tigerLogo,
-  "448290": tigerLogo,
+  102110: tigerLogo,
+  133690: tigerLogo,
+  418660: tigerLogo,
+  435420: tigerLogo,
+  441680: tigerLogo,
+  448290: tigerLogo,
   QYLD: globalxLogo,
   TQQQ: prosharesLogo,
 };
@@ -58,12 +66,19 @@ async function loadRecommended(excludeCode) {
   try {
     // 이전에 조회했던(클릭해서 들어가본) 종목을 앞에 두고, 모자란 자리는 고정
     // 8종으로 채운다 — 조회 이력이 1~2개뿐일 때 목록이 확 줄어들지 않게.
-    const viewedCodes = session.viewedCodes.filter((code) => code !== excludeCode);
+    const viewedCodes = session.viewedCodes.filter(
+      (code) => code !== excludeCode,
+    );
     const [viewedItems, response] = await Promise.all([
-      viewedCodes.length > 0 ? fetchEtfsByCodes(viewedCodes) : Promise.resolve([]),
+      viewedCodes.length > 0
+        ? fetchEtfsByCodes(viewedCodes)
+        : Promise.resolve([]),
       fetchEtfs(),
     ]);
-    const fallbackItems = [...(response?.domestic ?? []), ...(response?.overseas ?? [])]
+    const fallbackItems = [
+      ...(response?.domestic ?? []),
+      ...(response?.overseas ?? []),
+    ]
       .filter((item) => item.displayOrder != null && item.code !== excludeCode)
       .sort((a, b) => a.displayOrder - b.displayOrder);
 
@@ -96,19 +111,103 @@ const heroLogo = computed(() => HERO_LOGO_BY_CODE[props.code] ?? null);
 
 const showUnderstandModal = ref(false);
 const chatWidgetRef = ref(null);
+const detailSwiper = ref(null);
+const currentSlide = ref(0);
+const lastTermWheelAt = ref(0);
 
-const scrollbar = reactive({ heightPct: 100, topPct: 0 });
+const swiperModules = [Mousewheel, Keyboard];
+const DETAIL_SLIDE_COUNT = 4;
+const TERM_WHEEL_COOLDOWN = 1000;
 
-function updateScrollbar() {
-  const doc = document.documentElement;
-  const viewportH = window.innerHeight;
-  const fullH = doc.scrollHeight;
-  const heightPct = Math.min(100, (viewportH / fullH) * 100);
-  const maxScroll = fullH - viewportH;
-  const scrollPct = maxScroll > 0 ? window.scrollY / maxScroll : 0;
+const progressPct = computed(() =>
+  ((currentSlide.value + 1) / DETAIL_SLIDE_COUNT) * 100,
+);
 
-  scrollbar.heightPct = heightPct;
-  scrollbar.topPct = (100 - heightPct) * scrollPct;
+const mousewheelOptions = {
+  enabled: true,
+  forceToAxis: true,
+  thresholdDelta: 16,
+  thresholdTime: 280,
+  releaseOnEdges: false,
+};
+
+const keyboardOptions = { enabled: true, onlyInViewport: true };
+
+function updateScrollbar(activeIndex = 0) {
+  currentSlide.value = Math.min(activeIndex, DETAIL_SLIDE_COUNT - 1);
+}
+
+function handleSwiper(swiper) {
+  detailSwiper.value = swiper;
+  updateScrollbar(swiper.activeIndex);
+}
+
+function handleSlideChange(swiper) {
+  updateScrollbar(swiper.activeIndex);
+}
+
+function handleInnerScrollWheel(event) {
+  const target = event.currentTarget;
+  const scrollingDown = event.deltaY > 0;
+  const scrollingUp = event.deltaY < 0;
+  const canScrollDown =
+    target.scrollTop + target.clientHeight < target.scrollHeight - 1;
+  const canScrollUp = target.scrollTop > 0;
+
+  if ((scrollingDown && canScrollDown) || (scrollingUp && canScrollUp)) {
+    event.stopPropagation();
+  }
+}
+
+function setActiveTerm(index) {
+  activeTerm.value = Math.min(Math.max(index, 0), terms.value.length - 1);
+}
+
+function handleNameTermWheel(event) {
+  if (terms.value.length <= 1) return;
+
+  const scrollingDown = event.deltaY > 0;
+  const scrollingUp = event.deltaY < 0;
+  if (!scrollingDown && !scrollingUp) return;
+
+  const introScroller = event.currentTarget.closest(".intro-slide");
+  const isIntroBottom =
+    introScroller &&
+    introScroller.scrollTop + introScroller.clientHeight >=
+      introScroller.scrollHeight - 1;
+
+  if (scrollingDown && !isIntroBottom) return;
+  if (scrollingUp && activeTerm.value === 0) return;
+
+  const now = Date.now();
+  if (now - lastTermWheelAt.value < TERM_WHEEL_COOLDOWN) {
+    event.preventDefault();
+    event.stopPropagation();
+    return;
+  }
+
+  if (scrollingDown && activeTerm.value < terms.value.length - 1) {
+    event.preventDefault();
+    event.stopPropagation();
+    setActiveTerm(activeTerm.value + 1);
+    lastTermWheelAt.value = now;
+    return;
+  }
+
+  if (scrollingUp && activeTerm.value > 0) {
+    event.preventDefault();
+    event.stopPropagation();
+    setActiveTerm(activeTerm.value - 1);
+    lastTermWheelAt.value = now;
+    return;
+  }
+
+  if (scrollingDown && activeTerm.value === terms.value.length - 1) {
+    event.preventDefault();
+    event.stopPropagation();
+    detailSwiper.value?.slideNext();
+    lastTermWheelAt.value = now;
+  }
 }
 
 function openUnderstandModal() {
@@ -117,7 +216,7 @@ function openUnderstandModal() {
 
 function rereadFromTop() {
   showUnderstandModal.value = false;
-  window.scrollTo({ top: 0, behavior: "smooth" });
+  detailSwiper.value?.slideTo(0);
   // 이해 확인에서 되돌아온 경우, 질문 경로를 다시 안내한다.
   chatWidgetRef.value?.pingHint();
 }
@@ -136,14 +235,10 @@ function confirmUnderstood() {
 onMounted(() => {
   document.body.classList.add("hide-native-scrollbar");
   updateScrollbar();
-  window.addEventListener("scroll", updateScrollbar, { passive: true });
-  window.addEventListener("resize", updateScrollbar);
 });
 
 onUnmounted(() => {
   document.body.classList.remove("hide-native-scrollbar");
-  window.removeEventListener("scroll", updateScrollbar);
-  window.removeEventListener("resize", updateScrollbar);
 });
 
 // 이름 토큰 분해 — API `tokens`를 그대로 쓴다. `label`은 원문(없으면 "absent"
@@ -151,7 +246,8 @@ onUnmounted(() => {
 // (`detail`)로 서로 다른 문구다 (F-S4-01/F-S4-02, MVP_테스트데이터_ETF8종.md §2).
 const terms = computed(() =>
   (etf.value?.tokens ?? []).map((token) => ({
-    label: token.text ?? (token.absent ? `(${token.absent} 없음)` : `#${token.seq}`),
+    label:
+      token.text ?? (token.absent ? `(${token.absent} 없음)` : `#${token.seq}`),
     phrase: token.translation,
     detail: token.detail,
   })),
@@ -160,6 +256,7 @@ const terms = computed(() =>
 const activeTerm = ref(0);
 watch(terms, () => {
   activeTerm.value = 0;
+  lastTermWheelAt.value = 0;
 });
 
 // 구조 Q&A — API `structure`(label/question/value/sub)를 그대로 옮긴다.
@@ -196,7 +293,9 @@ const BRAND_BY_MANAGER_KEYWORD = [
 
 function brandFor(manager) {
   if (!manager) return "default";
-  const hit = BRAND_BY_MANAGER_KEYWORD.find(([keyword]) => manager.includes(keyword));
+  const hit = BRAND_BY_MANAGER_KEYWORD.find(([keyword]) =>
+    manager.includes(keyword),
+  );
   return hit ? hit[1] : "default";
 }
 
@@ -207,26 +306,24 @@ function openEtf(code) {
 
 <template>
   <div class="detail-page">
-    <div
-      class="left-scrollbar-track"
-      :style="{ opacity: scrollbar.heightPct < 100 ? 1 : 0.5 }"
-    >
-      <div
-        class="left-scrollbar-thumb"
-        :style="{
-          height: scrollbar.heightPct + '%',
-          top: scrollbar.topPct + '%',
-        }"
-      />
-    </div>
-
     <PageHeader>
       <div class="badges">
-        <BaseBadge v-for="label in session.profileBadges" :key="label" tone="gold">
+        <BaseBadge
+          v-for="label in session.profileBadges"
+          :key="label"
+          tone="gold"
+        >
           {{ label }}
         </BaseBadge>
       </div>
     </PageHeader>
+
+    <div class="detail-progress-track">
+      <div
+        class="detail-progress-fill"
+        :style="{ height: progressPct + '%' }"
+      />
+    </div>
 
     <button type="button" class="back-btn" @click="router.back()">
       <svg
@@ -245,165 +342,218 @@ function openEtf(code) {
     <p v-else-if="errorMessage" class="state-text">{{ errorMessage }}</p>
 
     <template v-else-if="etf">
-      <section class="hero-section">
-        <h1>{{ productName }}</h1>
-        <p class="issuer">{{ etf.market === "US" ? "해외(US) 상장" : "국내(KR) 상장" }}</p>
+      <Swiper
+        class="detail-fullpage"
+        direction="vertical"
+        :modules="swiperModules"
+        :slides-per-view="1"
+        :speed="640"
+        :mousewheel="mousewheelOptions"
+        :keyboard="keyboardOptions"
+        @swiper="handleSwiper"
+        @slideChange="handleSlideChange"
+      >
+        <SwiperSlide
+          class="detail-slide intro-slide"
+          @wheel="handleInnerScrollWheel"
+        >
+          <section class="intro-section">
+            <div class="hero-section">
+              <h1>{{ productName }}</h1>
+              <p class="issuer">
+                {{ etf.market === "US" ? "해외(US) 상장" : "국내(KR) 상장" }}
+              </p>
 
-        <div class="promo-banner">
-          <img v-if="heroLogo" :src="heroLogo" class="promo-logo" :alt="productName" />
-          <span v-else class="promo-fallback">{{ etf.code }}</span>
-        </div>
-      </section>
+              <div class="promo-banner">
+                <img
+                  v-if="heroLogo"
+                  :src="heroLogo"
+                  class="promo-logo"
+                  :alt="productName"
+                />
+                <span v-else class="promo-fallback">{{ etf.code }}</span>
+              </div>
+            </div>
 
-      <section class="name-section">
-      <h2>이름에 대해서 먼저 알려드릴게요!</h2>
+            <div class="name-section" @wheel="handleNameTermWheel">
+              <h2>이름에 대해서 먼저 알려드릴게요!</h2>
 
-      <div class="name-breakdown">
-        <img
-          :src="magnifierIcon"
-          class="name-icon-bg"
-          aria-hidden="true"
-          alt=""
-        />
+              <div class="name-breakdown">
+                <img
+                  :src="magnifierIcon"
+                  class="name-icon-bg"
+                  aria-hidden="true"
+                  alt=""
+                />
 
-        <div class="term-col">
-          <div
-            v-for="(t, i) in terms"
-            :key="t.label"
-            class="term-item"
-            :class="{ active: activeTerm === i }"
-            @click="activeTerm = i"
-          >
-            <span class="term-label">{{ t.label }}</span>
+                <div class="term-col">
+                  <div
+                    v-for="(t, i) in terms"
+                    :key="t.label"
+                    class="term-item"
+                    :class="{ active: activeTerm === i }"
+                    @click="setActiveTerm(i)"
+                  >
+                    <span class="term-label">{{ t.label }}</span>
 
-            <template v-if="activeTerm === i">
-              <span class="term-phrase">{{ t.phrase }}</span>
-              <p class="term-detail">{{ t.detail }}</p>
-            </template>
-          </div>
-        </div>
+                    <Transition name="term-detail-fade">
+                      <div v-if="activeTerm === i" class="term-panel">
+                        <span class="term-phrase">{{ t.phrase }}</span>
+                        <p class="term-detail">{{ t.detail }}</p>
+                      </div>
+                    </Transition>
+                  </div>
+                </div>
 
-        <div class="phrase-col">
-          <p
-            v-for="(t, i) in terms"
-            :key="t.label"
-            class="phrase"
-            :class="{ active: activeTerm === i }"
-            @click="activeTerm = i"
-          >
-            {{ t.phrase }}
-          </p>
-        </div>
-      </div>
-    </section>
+                <div class="phrase-col">
+                  <p
+                    v-for="(t, i) in terms"
+                    :key="t.label"
+                    class="phrase"
+                    :class="{ active: activeTerm === i }"
+                    @click="setActiveTerm(i)"
+                  >
+                    {{ t.phrase }}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </section>
+        </SwiperSlide>
 
-    <section class="qa-section">
-      <h2>{{ productName }}는 이렇게 움직여요</h2>
+        <SwiperSlide class="detail-slide">
+          <section class="qa-section" :class="{ active: currentSlide === 1 }">
+            <h2>{{ productName }}는 이렇게 움직여요</h2>
 
-      <div class="qa-grid">
-        <div v-for="(item, i) in qa" :key="item.q" class="qa-card">
-          <div class="qa-top">
-            <span class="qa-no">Q{{ i + 1 }}.</span>
-            <span class="qa-badge">A</span>
-          </div>
+            <div class="qa-grid">
+              <div
+                v-for="(item, i) in qa"
+                :key="item.q"
+                class="qa-card"
+                :style="{ '--qa-delay': `${Math.floor(i / 2) * 160}ms` }"
+              >
+                <div class="qa-top">
+                  <span class="qa-no">Q{{ i + 1 }}.</span>
+                  <span class="qa-badge">A</span>
+                </div>
 
-          <div class="qa-row">
-            <h3>{{ item.q }}</h3>
-            <p class="qa-answer">{{ item.a }}</p>
-          </div>
+                <div class="qa-row">
+                  <h3>{{ item.q }}</h3>
+                  <p class="qa-answer">{{ item.a }}</p>
+                </div>
 
-          <div class="qa-row qa-row-sub">
-            <p class="qa-tag">{{ item.tag }}</p>
-            <p v-if="item.sub" class="qa-sub">{{ item.sub }}</p>
-          </div>
-        </div>
-      </div>
-    </section>
+                <div class="qa-row qa-row-sub">
+                  <p class="qa-tag">{{ item.tag }}</p>
+                  <p v-if="item.sub" class="qa-sub">{{ item.sub }}</p>
+                </div>
+              </div>
+            </div>
+          </section>
+        </SwiperSlide>
 
-    <section class="warn-section">
-      <img :src="warningIcon" class="warn-icon" alt="" />
+        <SwiperSlide class="detail-slide warn-slide">
+          <section class="warn-section">
+            <img :src="warningIcon" class="warn-icon" alt="" />
 
-      <h2>이건 꼭 알고 투자해야해요!</h2>
+            <h2>이건 꼭 알고 투자해야해요!</h2>
 
-      <div v-if="etf.hiddenInsight" class="warn-card">
-        <p class="warn-title">{{ etf.hiddenInsight.summary }}</p>
-        <p class="warn-desc">{{ etf.hiddenInsight.body }}</p>
-      </div>
+            <div v-if="etf.hiddenInsight" class="warn-card">
+              <p class="warn-title">
+                <span class="warn-highlight">{{
+                  etf.hiddenInsight.summary
+                }}</span>
+              </p>
+              <p class="warn-desc">{{ etf.hiddenInsight.body }}</p>
+            </div>
 
-      <button type="button" class="warn-cta" @click="openUnderstandModal">
-        {{ productName }} 진단하러 가기
-      </button>
-
-      <p class="warn-disclaimer">
-        이 정보는 특정 매수 권유가 아니며, 누구나 동일하게 조회하는 사전 이해
-        목적의 구조 분석 결과입니다.
-      </p>
-
-      <div v-if="hiddenInsightEvidence" class="source-box">
-        <p class="source-label">*상품설명서(투자설명서) 근거 원문</p>
-        <p class="source-text">"{{ hiddenInsightEvidence.quote }}"</p>
-        <p v-if="hiddenInsightEvidence.quoteOriginal" class="source-text source-text-original">
-          "{{ hiddenInsightEvidence.quoteOriginal }}"
-        </p>
-      </div>
-    </section>
-
-    <section class="reco-section">
-      <h2>다른 ETF 상품도 살펴보세요!</h2>
-
-      <div class="reco-grid">
-        <div v-for="item in recommended" :key="item.code" class="reco-item">
-          <ProductCard
-            :brand="brandFor(item.manager)"
-            :code="item.code"
-            :name="item.name"
-            :manager="item.manager"
-            :disabled="!item.ready"
-            @open="openEtf(item.code)"
-          />
-        </div>
-      </div>
-    </section>
-
-    <ChatWidget
-      ref="chatWidgetRef"
-      stage="s4"
-      :product-code="props.code"
-      :horizon="session.horizon"
-      :purpose="session.purpose"
-      :fund-nature="session.fundNature"
-      :disabled="showUnderstandModal"
-      @retry="router.push({ name: 'questions' })"
-      @view-products="router.push({ name: 'search' })"
-    />
-
-    <Transition name="modal-fade">
-      <div v-if="showUnderstandModal" class="modal-backdrop">
-        <div class="modal-card">
-          <h3>{{ productName }}에 대해서 이해하셨나요?</h3>
-          <p>
-            이해하신 후 진단하면 나에게 필요한지 더 정확하게 판단할 수 있어요!
-          </p>
-
-          <div class="modal-actions">
-            <button
-              type="button"
-              class="modal-btn ghost"
-              @click="rereadFromTop"
-            >
-              다시 읽어볼게요
+            <button type="button" class="warn-cta" @click="openUnderstandModal">
+              {{ productName }} 진단하러 가기
             </button>
-            <button
-              type="button"
-              class="modal-btn primary"
-              @click="confirmUnderstood"
-            >
-              네, 이해했어요
-            </button>
+
+            <p class="warn-disclaimer">
+              이 정보는 특정 매수 권유가 아니며, 누구나 동일하게 조회하는 사전
+              이해 목적의 구조 분석 결과입니다.
+            </p>
+
+            <div v-if="hiddenInsightEvidence" class="source-box">
+              <p class="source-label">*상품설명서(투자설명서) 근거 원문</p>
+              <p class="source-text">"{{ hiddenInsightEvidence.quote }}"</p>
+              <p
+                v-if="hiddenInsightEvidence.quoteOriginal"
+                class="source-text source-text-original"
+              >
+                "{{ hiddenInsightEvidence.quoteOriginal }}"
+              </p>
+            </div>
+          </section>
+        </SwiperSlide>
+
+        <SwiperSlide
+          class="detail-slide reco-slide"
+          @wheel="handleInnerScrollWheel"
+        >
+          <section class="reco-section">
+            <h2>이런 ETF도 있어요!</h2>
+
+            <div class="reco-grid">
+              <div
+                v-for="item in recommended"
+                :key="item.code"
+                class="reco-item"
+              >
+                <ProductCard
+                  :brand="brandFor(item.manager)"
+                  :code="item.code"
+                  :name="item.name"
+                  :manager="item.manager"
+                  :disabled="!item.ready"
+                  @open="openEtf(item.code)"
+                />
+              </div>
+            </div>
+          </section>
+        </SwiperSlide>
+      </Swiper>
+
+      <ChatWidget
+        ref="chatWidgetRef"
+        stage="s4"
+        :product-code="props.code"
+        :horizon="session.horizon"
+        :purpose="session.purpose"
+        :fund-nature="session.fundNature"
+        :disabled="showUnderstandModal"
+        @retry="router.push({ name: 'questions' })"
+        @view-products="router.push({ name: 'search' })"
+      />
+
+      <Transition name="modal-fade">
+        <div v-if="showUnderstandModal" class="modal-backdrop">
+          <div class="modal-card">
+            <h3>{{ productName }}에 대해서 이해하셨나요?</h3>
+            <p>
+              이해하신 후 진단하면 나에게 필요한지 더 정확하게 판단할 수 있어요!
+            </p>
+
+            <div class="modal-actions">
+              <button
+                type="button"
+                class="modal-btn ghost"
+                @click="rereadFromTop"
+              >
+                다시 읽어볼게요
+              </button>
+              <button
+                type="button"
+                class="modal-btn primary"
+                @click="confirmUnderstood"
+              >
+                네, 이해했어요
+              </button>
+            </div>
           </div>
         </div>
-      </div>
-    </Transition>
+      </Transition>
     </template>
   </div>
 </template>
@@ -411,17 +561,80 @@ function openEtf(code) {
 <style scoped>
 .detail-page {
   position: relative;
-  min-height: 100svh;
+  height: 100svh;
   box-sizing: border-box;
-  overflow-x: hidden;
-  padding: 24px 48px 80px;
-  background: linear-gradient(180deg, #09101a 0%, #2f4c76 100%);
+  overflow: hidden;
+  padding: 0;
+  background: #05070d;
+}
+
+.detail-fullpage {
+  width: 100%;
+  height: 100%;
+}
+
+.detail-fullpage :deep(.swiper-wrapper) {
+  will-change: transform;
+}
+
+.detail-slide {
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+  padding: 0 48px;
+  background: #05070d;
+  backface-visibility: hidden;
+}
+
+.intro-slide {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.intro-slide::-webkit-scrollbar {
+  display: none;
+}
+
+.warn-slide {
+  background: #08101a;
+}
+
+.reco-slide {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  background: linear-gradient(180deg, #0b1421 0%, #315680 100%);
+}
+
+.reco-slide::-webkit-scrollbar {
+  display: none;
 }
 
 .badges {
   margin-left: auto;
   display: flex;
-  gap: 10px;
+  gap: 12px;
+}
+
+.detail-progress-track {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 20;
+  width: 5px;
+  height: 100svh;
+  overflow: hidden;
+  background: transparent;
+  pointer-events: none;
+}
+
+.detail-progress-fill {
+  width: 100%;
+  background: linear-gradient(180deg, #003b66 0%, #007acc 100%);
+  border-radius: 0 999px 999px 0;
+  transition: height 0.5s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .back-btn {
@@ -432,9 +645,9 @@ function openEtf(code) {
 
   width: 48px;
   height: 48px;
-  border-radius: 50%;
+  border-radius: 12px;
   border: none;
-  background: var(--color-surface-subtle);
+  background: #1d2634;
   color: #cfd8ea;
   display: flex;
   align-items: center;
@@ -453,15 +666,30 @@ section {
   margin: 0 auto;
 }
 
+.intro-section,
+.qa-section,
+.warn-section,
+.reco-section {
+  height: 100%;
+  min-height: 100%;
+  box-sizing: border-box;
+}
+
 /* ==================================================
    HERO
 ================================================== */
 
+.intro-section {
+  max-width: 1105px;
+  padding: 120px 0 80px;
+  display: flex;
+  flex-direction: column;
+}
+
 .hero-section {
   text-align: center;
-  /* 헤더가 absolute로 빠지면서 사라진 문서 흐름상의 높이(약 32px)를
-     보정 — 헤더 도입 전과 같은 시각적 여백을 유지한다. */
-  padding-top: 158px;
+  padding-top: 0;
+  flex: 0 0 auto;
 }
 
 .hero-section h1 {
@@ -484,8 +712,8 @@ section {
 
 .promo-banner {
   width: min(100%, 1063px);
-  height: 237px;
-  margin: 44px auto 0;
+  height: clamp(180px, 22svh, 237px);
+  margin: 34px auto 0;
   padding: 0;
   border-radius: 30px;
   background: linear-gradient(180deg, #fff8f2 0%, #ffb37a 60%, #ff8a3d 100%);
@@ -519,11 +747,16 @@ section {
 ================================================== */
 
 .name-section {
-  margin-top: 245px;
+  margin-top: 0;
+  padding: clamp(140px, 16svh, 220px) 0 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  flex: 1 1 auto;
 }
 
 .name-section h2 {
-  margin: 0 0 50px;
+  margin: 0 0 clamp(24px, 4svh, 50px);
   color: #f2f2f2;
   font-size: 30px;
   font-weight: 600;
@@ -537,7 +770,7 @@ section {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: clamp(20px, 3vw, 48px);
-  padding: clamp(28px, 3vw, 48px) 0;
+  padding: 0;
 }
 
 .name-icon-bg {
@@ -566,6 +799,10 @@ section {
 .term-item {
   cursor: pointer;
   padding: 4px 0;
+}
+
+.term-panel {
+  overflow: hidden;
 }
 
 .term-label {
@@ -604,6 +841,28 @@ section {
   max-width: 435px;
 }
 
+.term-detail-fade-enter-active,
+.term-detail-fade-leave-active {
+  transition:
+    opacity 0.32s ease,
+    transform 0.32s ease,
+    max-height 0.32s ease;
+}
+
+.term-detail-fade-enter-from,
+.term-detail-fade-leave-to {
+  max-height: 0;
+  opacity: 0;
+  transform: translateY(-8px);
+}
+
+.term-detail-fade-enter-to,
+.term-detail-fade-leave-from {
+  max-height: 140px;
+  opacity: 1;
+  transform: translateY(0);
+}
+
 .phrase-col {
   position: relative;
   z-index: 1;
@@ -623,7 +882,9 @@ section {
   line-height: 1.4;
   letter-spacing: -0.03em;
   text-align: center;
-  transition: color 0.2s ease;
+  transition:
+    color 0.28s ease,
+    opacity 0.28s ease;
 }
 
 .phrase.active {
@@ -635,7 +896,11 @@ section {
 ================================================== */
 
 .qa-section {
-  margin-top: 190px;
+  margin-top: 0;
+  padding: 96px 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .qa-section h2 {
@@ -655,28 +920,58 @@ section {
 }
 
 .qa-card {
-  min-height: 139px;
+  /* min-height: 112px; */
   box-sizing: border-box;
-  padding: 17px 20px 20px;
+  padding: 14px 18px 13px;
   border-radius: 20px;
   background: #fff;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  opacity: 0;
+  filter: blur(6px);
+  transform: translateY(72px) scale(0.985);
+}
+
+.qa-section.active .qa-card {
+  animation: qa-card-rise 0.95s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation-delay: var(--qa-delay);
+}
+
+@keyframes qa-card-rise {
+  from {
+    opacity: 0;
+    filter: blur(6px);
+    transform: translateY(72px) scale(0.985);
+  }
+
+  70% {
+    opacity: 1;
+    filter: blur(0);
+  }
+
+  to {
+    opacity: 1;
+    filter: blur(0);
+    transform: translateY(0);
+  }
 }
 
 .qa-top {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 
 .qa-no {
-  color: #9aa3b5;
+  color: #333333;
   font-size: clamp(12px, 0.95vw, 15px);
   font-weight: 700;
 }
 
 .qa-badge {
-  color: #0099ff;
+  color: #66c2ff;
   font-size: 13px;
   font-weight: 700;
 }
@@ -685,16 +980,16 @@ section {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  gap: 12px;
+  gap: 16px;
 }
 
 .qa-row-sub {
-  margin-top: 2px;
+  margin-top: 6px;
 }
 
 .qa-card h3 {
   margin: 0;
-  color: #1a2233;
+  color: #000;
   font-size: 18px;
   font-weight: 600;
   line-height: 1.4;
@@ -703,7 +998,7 @@ section {
 
 .qa-answer {
   margin: 0;
-  color: #2f6fe0;
+  color: #0099ff;
   font-size: 18px;
   font-weight: 600;
   line-height: 1.4;
@@ -714,13 +1009,13 @@ section {
 
 .qa-tag {
   margin: 0;
-  color: #9098ab;
+  color: #333333;
   font-size: clamp(11px, 0.85vw, 13px);
 }
 
 .qa-sub {
   margin: 0;
-  color: #9098ab;
+  color: #66c2ff;
   font-size: clamp(11px, 0.85vw, 13px);
   text-align: right;
 }
@@ -730,9 +1025,25 @@ section {
 ================================================== */
 
 .warn-section {
+  position: relative;
   max-width: 528px;
-  margin-top: 190px;
+  margin-top: 0;
+  padding: 96px 0;
   text-align: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.warn-section::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 100vw;
+  height: var(--size-section-divider);
+  transform: translateX(-50%);
+  background: var(--color-divider-strong);
 }
 
 .warn-icon {
@@ -743,7 +1054,7 @@ section {
 }
 
 .warn-section h2 {
-  margin: 10px 0 60px;
+  margin: 10px 0 40px;
   color: #fff;
   font-size: 28px;
   font-weight: 600;
@@ -753,10 +1064,10 @@ section {
 
 .warn-card {
   width: 319px;
-  min-height: 139px;
+  /* min-height: 139px; */
   max-width: 100%;
   margin: 0 auto;
-  padding: clamp(24px, 2.4vw, 36px);
+  padding: 25px 20px 24px;
   border-radius: 20px;
   background: #fff;
   display: flex;
@@ -775,21 +1086,34 @@ section {
 }
 
 .warn-title {
-  margin: 18px 0 0;
+  margin: 0;
   color: #1d2c48;
-  font-size: clamp(15px, 1.25vw, 19px);
+  font-size: 15px;
   font-weight: 700;
+  line-height: 1.4;
+}
+
+.warn-highlight {
+  display: inline;
+  padding: 1px 6px 2px;
+  border-radius: 2px;
+  color: #fff;
+  background: #0099ff;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
 }
 
 .warn-desc {
-  margin: 6px 0 0;
+  margin: 16px 0 0;
   color: var(--color-fg-muted);
   font-size: clamp(12px, 0.95vw, 15px);
 }
 
 .warn-cta {
-  min-height: 42px;
-  margin-top: 28px;
+  align-self: center;
+  width: fit-content;
+  max-width: calc(100vw - 96px);
+  margin-top: 60px;
   padding: 10px 20px;
   border: none;
   border-radius: 999px;
@@ -797,7 +1121,7 @@ section {
   color: #fff;
   font-size: 16px;
   font-weight: 600;
-  line-height: 1.4;
+  line-height: 1.2;
   letter-spacing: -0.48px;
   box-shadow: 0 0 5px #1a3a6a;
   cursor: pointer;
@@ -809,18 +1133,20 @@ section {
 }
 
 .warn-disclaimer {
-  margin: 16px 0 0;
+  margin: 24px 0 0;
   color: #5b667e;
   font-size: clamp(11px, 0.85vw, 13px);
 }
 
 .source-box {
-  margin-top: clamp(24px, 2.4vw, 36px);
+  width: min(1005px, calc(100vw - 192px));
+  margin: clamp(64px, 8svh, 100px) 0 0 50%;
+  transform: translateX(-50%);
   text-align: left;
 }
 
 .source-label {
-  margin: 0 0 8px;
+  margin: 0 0 12px;
   color: #8891a6;
   font-size: clamp(11px, 0.9vw, 14px);
   font-weight: 600;
@@ -844,8 +1170,21 @@ section {
 ================================================== */
 
 .reco-section {
+  position: relative;
   max-width: 1068px;
-  margin-top: 190px;
+  margin-top: 0;
+  padding-top: 96px;
+}
+
+.reco-section::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 100vw;
+  height: var(--size-section-divider);
+  transform: translateX(-50%);
+  background: var(--color-divider-strong);
 }
 
 .reco-section h2 {
@@ -864,8 +1203,8 @@ section {
 }
 
 @media (max-width: 700px) {
-  .detail-page {
-    padding: 20px 20px 48px;
+  .detail-slide {
+    padding: 0 20px;
   }
 
   .name-breakdown {
@@ -975,28 +1314,5 @@ section {
 .modal-fade-enter-from .modal-card,
 .modal-fade-leave-to .modal-card {
   transform: scale(0.94) translateY(10px);
-}
-
-/* ==================================================
-   좌측 스크롤바 (이 페이지 전용)
-================================================== */
-
-.left-scrollbar-track {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 5px;
-  height: 100vh;
-  z-index: 999;
-  pointer-events: none;
-}
-
-.left-scrollbar-thumb {
-  position: absolute;
-  left: 0;
-  width: 100%;
-  background: #0099ff;
-  border-radius: 999px;
-  transition: top 0.05s linear;
 }
 </style>

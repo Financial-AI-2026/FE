@@ -12,6 +12,9 @@
   --color-bg-page-deep: #0b1220;
   --color-bg-card: #101c33;
 
+  /* Color - palette */
+  --color-navy-20: #1d2e49;
+
   /* Color - text */
   --color-fg: #ffffff;
   --color-fg-soft: #e8ecf5;
@@ -22,6 +25,7 @@
   --color-border-default: rgba(255, 255, 255, 0.06);
   --color-border-subtle-strong: rgba(255, 255, 255, 0.08);
   --color-border-hover: rgba(150, 180, 230, 0.2);
+  --color-divider-strong: var(--color-navy-20);
 
   /* Color - surface (interactive) */
   --color-surface-subtle: rgba(255, 255, 255, 0.06);
@@ -43,6 +47,9 @@
   --space-4: 16px;
   --space-6: 24px;
   --space-8: 32px;
+
+  /* Size */
+  --size-section-divider: 6px;
 
   /* Radius */
   --radius-sm: 4px;
