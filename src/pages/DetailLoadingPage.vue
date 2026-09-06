@@ -58,7 +58,7 @@ onMounted(async () => {
     </PageHeader>
 
     <div class="content">
-      <h1>{{ etfName || code }}</h1>
+      <h1>{{ etfName || "상품 정보를 확인하고 있어요" }}</h1>
 
       <img :src="docSearchIcon" class="loading-icon" alt="" />
 

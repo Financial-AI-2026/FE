@@ -43,7 +43,7 @@ function retryCurrentDiagnosis() {
 }
 
 function goBackFromResult() {
-  router.push({ name: "search" });
+  router.push({ name: "detail", params: { code: props.code } });
 }
 
 // BE가 판정한 경고는 모두 보여준다. `warningsVisible`은 기존 최대 2개 노출
@@ -296,12 +296,16 @@ onUnmounted(() => {
 }
 
 .back-btn {
-  margin-top: 50px;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
+  position: absolute;
+  top: 126px;
+  left: 48px;
+  z-index: 5;
+
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
   border: none;
-  background: var(--color-surface-subtle);
+  background: #1d2634;
   color: #cfd8ea;
   display: flex;
   align-items: center;
@@ -311,8 +315,8 @@ onUnmounted(() => {
 }
 
 .back-btn svg {
-  width: 16px;
-  height: 16px;
+  width: 24px;
+  height: 24px;
 }
 
 section {
