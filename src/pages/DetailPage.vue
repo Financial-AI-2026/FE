@@ -119,15 +119,15 @@ const swiperModules = [Mousewheel, Keyboard];
 const DETAIL_SLIDE_COUNT = 4;
 const TERM_WHEEL_COOLDOWN = 1000;
 
-const progressPct = computed(() =>
-  ((currentSlide.value + 1) / DETAIL_SLIDE_COUNT) * 100,
+const progressPct = computed(
+  () => ((currentSlide.value + 1) / DETAIL_SLIDE_COUNT) * 100,
 );
 
 const mousewheelOptions = {
   enabled: true,
   forceToAxis: true,
-  thresholdDelta: 16,
-  thresholdTime: 280,
+  thresholdDelta: 40,
+  thresholdTime: 450,
   releaseOnEdges: false,
 };
 
@@ -572,6 +572,21 @@ function openEtf(code) {
   background: #05070d;
 }
 
+.detail-page::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  z-index: 19;
+  height: 122px;
+  background: linear-gradient(
+    180deg,
+    #05070d 0%,
+    rgba(5, 7, 13, 0.92) 56%,
+    rgba(5, 7, 13, 0) 100%
+  );
+  pointer-events: none;
+}
+
 .detail-fullpage {
   width: 100%;
   height: 100%;
@@ -620,6 +635,10 @@ function openEtf(code) {
   margin-left: auto;
   display: flex;
   gap: 12px;
+}
+
+.detail-page :deep(.page-header) {
+  z-index: 20;
 }
 
 .detail-progress-track {
@@ -685,7 +704,7 @@ section {
 
 .intro-section {
   max-width: 1105px;
-  padding: 120px 0 80px;
+  padding: 120px 0 150px;
   display: flex;
   flex-direction: column;
 }
@@ -780,14 +799,14 @@ section {
 .name-icon-bg {
   position: absolute;
   top: 50%;
-  right: -20%;
+  right: -28%;
   transform: translateY(-50%) rotate(-5deg);
   z-index: 0;
-  width: clamp(420px, 33vw, 520px);
+  width: clamp(520px, 42vw, 680px);
   height: auto;
-  opacity: 0.14;
-  /* filter: grayscale(1) blur(0.5px); */
-  filter: blur(0.5px);
+  opacity: 0.07;
+  filter: grayscale(0.5) blur(0.9px);
+  /* filter: blur(0.1px); */
   pointer-events: none;
   user-select: none;
 }
