@@ -19,7 +19,10 @@ const MIN_DISPLAY_MS = 1800; // 연출용 최소 노출 시간 — 실제 조회
 
 onMounted(async () => {
   if (!session.hasConditions) {
-    router.replace({ name: "questions" });
+    router.replace({
+      name: "questions",
+      query: { returnTo: "result", code: props.code },
+    });
     return;
   }
 

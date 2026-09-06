@@ -1,11 +1,17 @@
 <script setup>
 import { ref, reactive, computed } from "vue";
-import { useRouter } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import searchDocumentIcon from "../assets/icons/icon-note-document.png";
 import PageHeader from "../components/base/PageHeader.vue";
-import { useSessionStore } from "../stores/session";
+import {
+  FUND_NATURE_BY_OPTION,
+  HORIZON_BY_OPTION,
+  PURPOSE_BY_OPTION,
+  useSessionStore,
+} from "../stores/session";
 
 const router = useRouter();
+const route = useRoute();
 const session = useSessionStore();
 
 const questions = [
@@ -43,7 +49,15 @@ const questions = [
 const started = ref(true);
 const step = ref(0);
 
-const answers = reactive({});
+const answers = reactive({
+  0: HORIZON_BY_OPTION.indexOf(session.horizon),
+  1: PURPOSE_BY_OPTION.indexOf(session.purpose),
+  2: FUND_NATURE_BY_OPTION.indexOf(session.fundNature),
+});
+
+Object.keys(answers).forEach((key) => {
+  if (answers[key] < 0) delete answers[key];
+});
 
 const current = computed(() => questions[step.value]);
 
@@ -68,7 +82,13 @@ function next() {
     step.value += 1;
   } else {
     session.setAnswers(answers);
-    router.push({ name: "search" });
+    const returnCode =
+      typeof route.query.code === "string" ? route.query.code : session.currentCode;
+    if (route.query.returnTo === "result" && returnCode) {
+      router.push({ name: "detail-loading", params: { code: returnCode } });
+    } else {
+      router.push({ name: "search" });
+    }
   }
 }
 

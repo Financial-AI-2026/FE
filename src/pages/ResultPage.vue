@@ -35,6 +35,13 @@ function openEtf(code) {
   router.push({ name: "detail", params: { code } });
 }
 
+function retryCurrentDiagnosis() {
+  router.push({
+    name: "questions",
+    query: { returnTo: "result", code: props.code },
+  });
+}
+
 // warningsVisible만큼만 노출 (F-S6-02 "경고 카드 정렬·최대 2개 노출") — 각
 // 경고는 hero+sim 블록을 하나씩 갖는다. "이런 점도 있어요!"는 별개로
 // `infos[]`(경고까지는 아닌 참고 정보) 자리다 — 애초에 이 화면 mock의
@@ -53,6 +60,7 @@ async function loadDiagnosis(code) {
   loading.value = true;
   errorMessage.value = null;
   try {
+    session.setCurrentCode(code);
     diagnosis.value = await fetchEtfDiagnosis(code, session.conditionParams);
   } catch (err) {
     diagnosis.value = null;
@@ -96,7 +104,10 @@ watch(
   (code) => {
     if (!code) return;
     if (!session.hasConditions) {
-      router.replace({ name: "questions" });
+      router.replace({
+        name: "questions",
+        query: { returnTo: "result", code },
+      });
       return;
     }
     loadDiagnosis(code);
@@ -232,7 +243,7 @@ onUnmounted(() => {
       <button
         type="button"
         class="retry-btn reveal"
-        @click="router.push({ name: 'questions' })"
+        @click="retryCurrentDiagnosis"
       >
         조건 수정해서 다시 진단받기
       </button>
@@ -261,7 +272,7 @@ onUnmounted(() => {
       :horizon="session.horizon"
       :purpose="session.purpose"
       :fund-nature="session.fundNature"
-      @retry="router.push({ name: 'questions' })"
+      @retry="retryCurrentDiagnosis"
       @view-products="router.push({ name: 'search' })"
     />
   </div>
