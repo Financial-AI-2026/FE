@@ -10,6 +10,11 @@ import ChatWidget from "../components/ChatWidget.vue";
 import PageHeader from "../components/base/PageHeader.vue";
 import DiagnosticWidget from "../components/DiagnosticWidget.vue";
 import { fetchEtfDiagnosis, fetchEtfs, fetchEtfsByCodes, ApiError } from "../api/client";
+import {
+  fullpageKeyboardOptions,
+  fullpageMousewheelOptions,
+  fullpageSwiperSpeed,
+} from "../constants/swiperOptions";
 import { useSessionStore } from "../stores/session";
 
 const props = defineProps({ code: { type: String, required: true } });
@@ -75,16 +80,6 @@ const currentSlide = ref(0);
 const swiperModules = [Mousewheel, Keyboard];
 
 const progressPct = computed(() => ((currentSlide.value + 1) / totalSlides.value) * 100);
-
-const mousewheelOptions = {
-  enabled: true,
-  forceToAxis: true,
-  thresholdDelta: 16,
-  thresholdTime: 280,
-  releaseOnEdges: false,
-};
-
-const keyboardOptions = { enabled: true, onlyInViewport: true };
 
 function updateScrollbar(activeIndex = 0) {
   currentSlide.value = Math.min(activeIndex, totalSlides.value - 1);
@@ -215,9 +210,9 @@ watch(
         direction="vertical"
         :modules="swiperModules"
         :slides-per-view="1"
-        :speed="640"
-        :mousewheel="mousewheelOptions"
-        :keyboard="keyboardOptions"
+        :speed="fullpageSwiperSpeed"
+        :mousewheel="fullpageMousewheelOptions"
+        :keyboard="fullpageKeyboardOptions"
         @swiper="handleSwiper"
         @slideChange="handleSlideChange"
       >

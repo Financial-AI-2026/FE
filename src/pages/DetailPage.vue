@@ -19,6 +19,11 @@ import {
   fetchEtfsByCodes,
   ApiError,
 } from "../api/client";
+import {
+  fullpageKeyboardOptions,
+  fullpageMousewheelOptions,
+  fullpageSwiperSpeed,
+} from "../constants/swiperOptions";
 import { useSessionStore } from "../stores/session";
 
 const props = defineProps({ code: { type: String, required: true } });
@@ -122,16 +127,6 @@ const TERM_WHEEL_COOLDOWN = 1000;
 const progressPct = computed(
   () => ((currentSlide.value + 1) / DETAIL_SLIDE_COUNT) * 100,
 );
-
-const mousewheelOptions = {
-  enabled: true,
-  forceToAxis: true,
-  thresholdDelta: 40,
-  thresholdTime: 450,
-  releaseOnEdges: false,
-};
-
-const keyboardOptions = { enabled: true, onlyInViewport: true };
 
 function updateScrollbar(activeIndex = 0) {
   currentSlide.value = Math.min(activeIndex, DETAIL_SLIDE_COUNT - 1);
@@ -351,9 +346,9 @@ function openEtf(code) {
         direction="vertical"
         :modules="swiperModules"
         :slides-per-view="1"
-        :speed="640"
-        :mousewheel="mousewheelOptions"
-        :keyboard="keyboardOptions"
+        :speed="fullpageSwiperSpeed"
+        :mousewheel="fullpageMousewheelOptions"
+        :keyboard="fullpageKeyboardOptions"
         @swiper="handleSwiper"
         @slideChange="handleSlideChange"
       >
