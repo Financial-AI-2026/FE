@@ -1,7 +1,6 @@
 <script setup>
 import { ref, onMounted } from "vue";
 import { useRouter } from "vue-router";
-import BaseBadge from "../components/base/BaseBadge.vue";
 import PageHeader from "../components/base/PageHeader.vue";
 import ChatWidget from "../components/ChatWidget.vue";
 import docSearchIcon from "../assets/icons/loading-doc-search.png";
@@ -49,13 +48,7 @@ onMounted(async () => {
 
 <template>
   <div class="loading-page">
-    <PageHeader>
-      <div class="badges">
-        <BaseBadge v-for="label in session.profileBadges" :key="label" tone="gold">
-          {{ label }}
-        </BaseBadge>
-      </div>
-    </PageHeader>
+    <PageHeader />
 
     <div class="content">
       <h1>{{ etfName || "상품 정보를 확인하고 있어요" }}</h1>
@@ -84,11 +77,6 @@ onMounted(async () => {
     var(--color-bg-page-mid) 45%,
     var(--color-bg-page) 100%
   );
-}
-
-.badges {
-  display: flex;
-  gap: 10px;
 }
 
 .content {
